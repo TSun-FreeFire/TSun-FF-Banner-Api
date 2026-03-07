@@ -49,25 +49,14 @@ async def fetch_image_bytes(item_id):
         return None
 
     item_id = str(item_id)
-    
-    for repo_num in range(1, 7):
-        if repo_num == 1: 
-            batch_start, batch_end = 1, 7
-        else:
-            batch_start = (repo_num - 1) * 6 + 1
-            batch_end = batch_start + 6
-            
-        for batch_num in range(batch_start, batch_end):
-            batch_str = f"{batch_num:02d}"
-            url = f"https://raw.githubusercontent.com/djdndbdjfi/free-fire-items-{repo_num}/main/items/batch-{batch_str}/{item_id}.png"
-            
-            try:
-                resp = await client.head(url)
-                if resp.status_code == 200:
-                    img_resp = await client.get(url)
-                    return img_resp.content
-            except:
-                continue
+    url = f"https://raw.githubusercontent.com/3ch0Byt3-1/Icons/refs/heads/main/icons/{item_id}.png"
+
+    try:
+        resp = await client.get(url)
+        if resp.status_code == 200:
+            return resp.content
+    except:
+        pass
     return None
 
 def bytes_to_image(img_bytes):
@@ -84,43 +73,30 @@ def process_banner_image(data, avatar_bytes, banner_bytes, pin_bytes):
     name = data.get("AccountName", "Unknown")
     guild = data.get("GuildName", "")
 
-    TARGET_HEIGHT = 400 
-    avatar_img = avatar_img.resize((TARGET_HEIGHT, TARGET_HEIGHT), Image.LANCZOS)
-    
-    b_w, b_h = banner_img.size
-    if b_w > 50 and b_h > 50:
-        banner_img = banner_img.rotate(3, resample=Image.BICUBIC, expand=True)
-        b_w, b_h = banner_img.size
-        
-        crop_top, crop_bottom, crop_sides = 0.23, 0.32, 0.17
-        left, top = b_w * crop_sides, b_h * crop_top
-        right, bottom = b_w * (1 - crop_sides), b_h * (1 - crop_bottom)
-        banner_img = banner_img.crop((left, top, right, bottom))
+    AVATAR_W, AVATAR_H = 325, 315
+    BANNER_W, BANNER_H = 1145, 315
+    FINAL_W, FINAL_H = 1470, 315
 
-    b_w, b_h = banner_img.size
-    if b_h > 0:
-        new_banner_w = int(TARGET_HEIGHT * (b_w / b_h) * 2.0)
-        banner_img = banner_img.resize((new_banner_w, TARGET_HEIGHT), Image.LANCZOS)
-    else:
-        banner_img = Image.new("RGBA", (800, 400), (50, 50, 50))
+    avatar_img = avatar_img.resize((AVATAR_W, AVATAR_H), Image.Resampling.LANCZOS)
+    banner_img = banner_img.resize((BANNER_W, BANNER_H), Image.Resampling.LANCZOS)
 
-    final_w = TARGET_HEIGHT + new_banner_w
-    final_h = TARGET_HEIGHT
-    combined = Image.new("RGBA", (final_w, final_h), (0, 0, 0, 0))
+    combined = Image.new("RGBA", (FINAL_W, FINAL_H), (0, 0, 0, 0))
     combined.paste(avatar_img, (0, 0))
-    combined.paste(banner_img, (TARGET_HEIGHT, 0))
+    combined.paste(banner_img, (AVATAR_W, 0))
     
     draw = ImageDraw.Draw(combined)
-    
-    font_large = load_unicode_font(125) 
-    font_large_cherokee = load_unicode_font(125, FONT_CHEROKEE)
-    font_small = load_unicode_font(95) 
-    font_small_cherokee = load_unicode_font(95, FONT_CHEROKEE)
-    font_level = load_unicode_font(50)
 
-    text_x = TARGET_HEIGHT + 40 
-    text_y = 40 
-    
+    # Layout positions
+    NAME_X,  NAME_Y,  NAME_H,  NAME_W  = 396,  34,  95,  900
+    GUILD_X, GUILD_Y, GUILD_H, GUILD_W = 396,  206, 70,  700
+    LVL_X,   LVL_Y,  LVL_H,   LVL_W   = 1293, 249, 60,  170
+
+    font_large = load_unicode_font(NAME_H)
+    font_large_cherokee = load_unicode_font(NAME_H, FONT_CHEROKEE)
+    font_small = load_unicode_font(GUILD_H)
+    font_small_cherokee = load_unicode_font(GUILD_H, FONT_CHEROKEE)
+    font_level = load_unicode_font(LVL_H)
+
     def is_cherokee(char):
         code = ord(char)
         return (0x13A0 <= code <= 0x13FF) or (0xAB70 <= code <= 0xABBF)
@@ -129,41 +105,23 @@ def process_banner_image(data, avatar_bytes, banner_bytes, pin_bytes):
         current_x = x
         for char in text:
             font = font_fallback if is_cherokee(char) else font_main
-            
-            # Draw stroke
             for dx in range(-size, size + 1):
                 for dy in range(-size, size + 1):
                     draw.text((current_x + dx, y + dy), char, font=font, fill=stroke_col)
-            
-            # Draw text
             draw.text((current_x, y), char, font=font, fill=text_col)
-            
-            # Advance cursor
-            char_width = font.getlength(char)
-            current_x += char_width
+            current_x += font.getlength(char)
 
     stroke_col, text_col = "black", "white"
-    draw_text_with_stroke(text_x + 25, text_y, name, font_large, font_large_cherokee, 4)
-    draw_text_with_stroke(text_x + 25, text_y + 200, guild, font_small, font_small_cherokee, 3)
+    draw_text_with_stroke(NAME_X,  NAME_Y,  name,  font_large, font_large_cherokee, 4)
+    draw_text_with_stroke(GUILD_X, GUILD_Y, guild, font_small, font_small_cherokee, 3)
 
     if pin_img and pin_img.size != (100, 100):
-        pin_size = 130 
-        pin_img = pin_img.resize((pin_size, pin_size), Image.LANCZOS)
-        combined.paste(pin_img, (0, TARGET_HEIGHT - pin_size), pin_img)
+        pin_size = 130
+        pin_img = pin_img.resize((pin_size, pin_size), Image.Resampling.LANCZOS)
+        combined.paste(pin_img, (0, FINAL_H - pin_size), pin_img)
 
     level_txt = f"Lvl.{level}"
-    try:
-        bbox = draw.textbbox((0, 0), level_txt, font=font_level)
-        text_w, text_h = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    except:
-        text_w, text_h = len(level_txt) * 20, 40
-
-    px, py = 25, 16
-    box_x = final_w - (text_w + px * 2)
-    box_y = final_h - (text_h + py * 2)
-    
-    draw.rectangle([box_x, box_y, final_w, final_h], fill="black")
-    draw.text((box_x + px, box_y + py - 6), level_txt, font=font_level, fill="white")
+    draw.text((LVL_X, LVL_Y), level_txt, font=font_level, fill="white")
 
     img_io = io.BytesIO()
     combined.save(img_io, 'PNG')
