@@ -26,6 +26,7 @@ app.add_middleware(
 INFO_API_URL = "https://tsun-ff-infoxvisits.onrender.com/info"
 FONT_FILE = "arial_unicode_bold.otf"
 FONT_CHEROKEE = "NotoSansCherokee.ttf"
+FONT_CANADIAN_ABORIGINAL = "NotoSansCanadianAboriginal-Regular.ttf"
 
 client = httpx.AsyncClient(
     headers={"User-Agent": "Mozilla/5.0"},
@@ -61,17 +62,20 @@ async def fetch_image_bytes(item_id):
 
 def bytes_to_image(img_bytes):
     if img_bytes:
-        return Image.open(io.BytesIO(img_bytes)).convert("RGBA")
-    return Image.new('RGBA', (100, 100), (0, 0, 0, 0))
+        try:
+            return Image.open(io.BytesIO(img_bytes)).convert("RGBA")
+        except Exception:
+            pass
+    return None
 
 def process_banner_image(data, avatar_bytes, banner_bytes, pin_bytes):
-    avatar_img = bytes_to_image(avatar_bytes)
-    banner_img = bytes_to_image(banner_bytes)
-    pin_img = bytes_to_image(pin_bytes)
+    avatar_img = bytes_to_image(avatar_bytes) or Image.new('RGBA', (325, 315), (0, 0, 0, 0))
+    banner_img = bytes_to_image(banner_bytes) or Image.new('RGBA', (1145, 315), (0, 0, 0, 0))
+    pin_img    = bytes_to_image(pin_bytes)
 
-    level = str(data.get("AccountLevel", "0"))
-    name = data.get("AccountName", "Unknown")
-    guild = data.get("GuildName", "")
+    level = str(data.get("AccountLevel") or "0")
+    name = str(data.get("AccountName") or "Unknown")
+    guild = str(data.get("GuildName") or "")
 
     AVATAR_W, AVATAR_H = 325, 315
     BANNER_W, BANNER_H = 1145, 315
@@ -93,18 +97,31 @@ def process_banner_image(data, avatar_bytes, banner_bytes, pin_bytes):
 
     font_large = load_unicode_font(NAME_H)
     font_large_cherokee = load_unicode_font(NAME_H, FONT_CHEROKEE)
+    font_large_canadian = load_unicode_font(NAME_H, FONT_CANADIAN_ABORIGINAL)
     font_small = load_unicode_font(GUILD_H)
     font_small_cherokee = load_unicode_font(GUILD_H, FONT_CHEROKEE)
+    font_small_canadian = load_unicode_font(GUILD_H, FONT_CANADIAN_ABORIGINAL)
     font_level = load_unicode_font(LVL_H)
 
     def is_cherokee(char):
         code = ord(char)
         return (0x13A0 <= code <= 0x13FF) or (0xAB70 <= code <= 0xABBF)
 
-    def draw_text_with_stroke(x, y, text, font_main, font_fallback, size):
+    def is_canadian_aboriginal(char):
+        code = ord(char)
+        return 0x1400 <= code <= 0x167F
+
+    def resolve_font(char, font_main, font_cherokee, font_canadian):
+        if is_cherokee(char):
+            return font_cherokee
+        if is_canadian_aboriginal(char):
+            return font_canadian
+        return font_main
+
+    def draw_text_with_stroke(x, y, text, font_main, font_cherokee, font_canadian, size):
         current_x = x
         for char in text:
-            font = font_fallback if is_cherokee(char) else font_main
+            font = resolve_font(char, font_main, font_cherokee, font_canadian)
             for dx in range(-size, size + 1):
                 for dy in range(-size, size + 1):
                     draw.text((current_x + dx, y + dy), char, font=font, fill=stroke_col)
@@ -112,10 +129,10 @@ def process_banner_image(data, avatar_bytes, banner_bytes, pin_bytes):
             current_x += font.getlength(char)
 
     stroke_col, text_col = "black", "white"
-    draw_text_with_stroke(NAME_X,  NAME_Y,  name,  font_large, font_large_cherokee, 4)
-    draw_text_with_stroke(GUILD_X, GUILD_Y, guild, font_small, font_small_cherokee, 3)
+    draw_text_with_stroke(NAME_X, NAME_Y, name, font_large, font_large_cherokee, font_large_canadian, 4)
+    draw_text_with_stroke(GUILD_X, GUILD_Y, guild, font_small, font_small_cherokee, font_small_canadian, 3)
 
-    if pin_img and pin_img.size != (100, 100):
+    if pin_img is not None:
         pin_size = 130
         pin_img = pin_img.resize((pin_size, pin_size), Image.Resampling.LANCZOS)
         combined.paste(pin_img, (0, FINAL_H - pin_size), pin_img)
@@ -151,10 +168,10 @@ async def get_banner(uid: str):
             
         data = resp.json()
         
-        account_info = data.get("AccountInfo", {})
-        equipped_items = data.get("EquippedItemsInfo", {})
-        profile_info = data.get("AccountProfileInfo", {})
-        guild_info = data.get("GuildInfo", {})
+        account_info = data.get("AccountInfo") or {}
+        equipped_items = data.get("EquippedItemsInfo") or {}
+        profile_info = data.get("AccountProfileInfo") or {}
+        guild_info = data.get("GuildInfo") or {}
         
         if not account_info: raise HTTPException(status_code=404, detail="Not Found")
         
@@ -162,18 +179,18 @@ async def get_banner(uid: str):
         banner_task = fetch_image_bytes(equipped_items.get("EquippedBannerId"))
         
         pin_id = profile_info.get("Title")
-        pin_task = fetch_image_bytes(pin_id) if (pin_id and str(pin_id) != "0") else asyncio.sleep(0)
+        pin_task = fetch_image_bytes(pin_id) if (pin_id and str(pin_id) != "0") else asyncio.sleep(0, result=None)
 
         results = await asyncio.gather(avatar_task, banner_task, pin_task)
-        avatar_bytes, banner_bytes, pin_bytes = results[0], results[1], results[2]
-        
-        if pin_bytes is None: pin_bytes = b''
+        avatar_bytes  = results[0] or b''
+        banner_bytes  = results[1] or b''
+        pin_bytes     = results[2] or b''
 
         loop = asyncio.get_event_loop()
         banner_data = {
-            "AccountLevel": account_info.get("AccountLevel", "0"),
-            "AccountName": account_info.get("AccountName", "Unknown"),
-            "GuildName": guild_info.get("GuildName", "")
+            "AccountLevel": account_info.get("AccountLevel") or "0",
+            "AccountName": account_info.get("AccountName") or "Unknown",
+            "GuildName": guild_info.get("GuildName") or ""
         }
         
         img_io = await loop.run_in_executor(

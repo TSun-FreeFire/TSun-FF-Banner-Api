@@ -12,8 +12,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy your app code
-COPY app.py .
+# Copy app code and bundled font assets
+COPY . .
 
 # Expose port
 EXPOSE 5000
