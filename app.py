@@ -2,6 +2,7 @@ import io
 import os
 import asyncio
 import httpx
+from typing import Optional
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -164,8 +165,18 @@ async def home():
            "Note": "Join To @TSun_FreeFire For More 💝"
     }
 
+def validate_avatar_id(avatar_id: str) -> int:
+    if len(avatar_id) != 9 or not avatar_id.isdigit() or not avatar_id.startswith("902"):
+        raise HTTPException(status_code=400, detail="Invalid avatar ID. Must be exactly 9 digits and start with 902 (e.g. 902000001)")
+    return int(avatar_id)
+
+def validate_banner_id(banner_id: str) -> int:
+    if len(banner_id) != 9 or not banner_id.isdigit() or not banner_id.startswith("901"):
+        raise HTTPException(status_code=400, detail="Invalid banner ID. Must be exactly 9 digits and start with 901 (e.g. 901000001)")
+    return int(banner_id)
+
 @app.get("/profile")
-async def get_banner(uid: str):
+async def get_banner(uid: str, banner: Optional[str] = None, avatar: Optional[str] = None):
     if not uid:
         raise HTTPException(status_code=400, detail="UID required")
 
@@ -184,8 +195,10 @@ async def get_banner(uid: str):
         
         if not account_info: raise HTTPException(status_code=404, detail="Not Found")
         
-        avatar_task = fetch_image_bytes(equipped_items.get("EquippedAvatarId"))
-        banner_task = fetch_image_bytes(equipped_items.get("EquippedBannerId"))
+        avatar_id = validate_avatar_id(avatar) if avatar else (equipped_items.get("EquippedAvatarId") or 902000003)
+        banner_id = validate_banner_id(banner) if banner else (equipped_items.get("EquippedBannerId") or 901000001)
+        avatar_task = fetch_image_bytes(avatar_id)
+        banner_task = fetch_image_bytes(banner_id)
         
         pin_id = profile_info.get("Title")
         pin_task = fetch_image_bytes(pin_id) if (pin_id and str(pin_id) != "0") else asyncio.sleep(0, result=None)
