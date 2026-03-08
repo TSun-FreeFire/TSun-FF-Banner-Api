@@ -1,2 +1,16 @@
 .claude/
 .github/
+
+# Python cache - never commit these
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.env
+.venv/
+venv/
+__pycache__/

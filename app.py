@@ -27,6 +27,7 @@ INFO_API_URL = "https://tsun-ff-infoxvisits.onrender.com/info"
 FONT_FILE = "arial_unicode_bold.otf"
 FONT_CHEROKEE = "NotoSansCherokee.ttf"
 FONT_CANADIAN_ABORIGINAL = "NotoSansCanadianAboriginal-Regular.ttf"
+FONT_TIBETAN = "NotoSerifTibetan-Regular.ttf"
 
 client = httpx.AsyncClient(
     headers={"User-Agent": "Mozilla/5.0"},
@@ -98,9 +99,11 @@ def process_banner_image(data, avatar_bytes, banner_bytes, pin_bytes):
     font_large = load_unicode_font(NAME_H)
     font_large_cherokee = load_unicode_font(NAME_H, FONT_CHEROKEE)
     font_large_canadian = load_unicode_font(NAME_H, FONT_CANADIAN_ABORIGINAL)
+    font_large_tibetan = load_unicode_font(NAME_H, FONT_TIBETAN)
     font_small = load_unicode_font(GUILD_H)
     font_small_cherokee = load_unicode_font(GUILD_H, FONT_CHEROKEE)
     font_small_canadian = load_unicode_font(GUILD_H, FONT_CANADIAN_ABORIGINAL)
+    font_small_tibetan = load_unicode_font(GUILD_H, FONT_TIBETAN)
     font_level = load_unicode_font(LVL_H)
 
     def is_cherokee(char):
@@ -111,17 +114,23 @@ def process_banner_image(data, avatar_bytes, banner_bytes, pin_bytes):
         code = ord(char)
         return 0x1400 <= code <= 0x167F
 
-    def resolve_font(char, font_main, font_cherokee, font_canadian):
+    def is_tibetan(char):
+        code = ord(char)
+        return 0x0F00 <= code <= 0x0FFF
+
+    def resolve_font(char, font_main, font_cherokee, font_canadian, font_tibetan):
         if is_cherokee(char):
             return font_cherokee
         if is_canadian_aboriginal(char):
             return font_canadian
+        if is_tibetan(char):
+            return font_tibetan
         return font_main
 
-    def draw_text_with_stroke(x, y, text, font_main, font_cherokee, font_canadian, size):
+    def draw_text_with_stroke(x, y, text, font_main, font_cherokee, font_canadian, font_tibetan, size):
         current_x = x
         for char in text:
-            font = resolve_font(char, font_main, font_cherokee, font_canadian)
+            font = resolve_font(char, font_main, font_cherokee, font_canadian, font_tibetan)
             for dx in range(-size, size + 1):
                 for dy in range(-size, size + 1):
                     draw.text((current_x + dx, y + dy), char, font=font, fill=stroke_col)
@@ -129,8 +138,8 @@ def process_banner_image(data, avatar_bytes, banner_bytes, pin_bytes):
             current_x += font.getlength(char)
 
     stroke_col, text_col = "black", "white"
-    draw_text_with_stroke(NAME_X, NAME_Y, name, font_large, font_large_cherokee, font_large_canadian, 4)
-    draw_text_with_stroke(GUILD_X, GUILD_Y, guild, font_small, font_small_cherokee, font_small_canadian, 3)
+    draw_text_with_stroke(NAME_X, NAME_Y, name, font_large, font_large_cherokee, font_large_canadian, font_large_tibetan, 4)
+    draw_text_with_stroke(GUILD_X, GUILD_Y, guild, font_small, font_small_cherokee, font_small_canadian, font_small_tibetan, 3)
 
     if pin_img is not None:
         pin_size = 130
