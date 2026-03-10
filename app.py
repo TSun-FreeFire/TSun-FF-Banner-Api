@@ -2,15 +2,17 @@ import io
 import os
 import asyncio
 import httpx
-from typing import Optional
+from typing import Optional, AsyncGenerator
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 from PIL import Image, ImageDraw, ImageFont
 from concurrent.futures import ThreadPoolExecutor
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
     await client.aclose()
     process_pool.shutdown()
@@ -23,6 +25,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve static frontend assets
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+if os.path.exists(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 INFO_API_URL = "https://tsun-ff-infoxvisits.onrender.com/info"
 FONT_FILE = "arial_unicode_bold.otf"
@@ -155,15 +162,13 @@ def process_banner_image(data, avatar_bytes, banner_bytes, pin_bytes):
     img_io.seek(0)
     return img_io
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def home():
-    return {"message": "⚡ Ultra Fast Banner API Running",
-           "Fix By": "TSun × Kittens",
-           "Telegram": "@saeedxdie",
-           "Your Info Api": INFO_API_URL,
-           "Api Endpoint": "/profile?uid={uid}",
-           "Note": "Join To @TSun_FreeFire For More 💝"
-    }
+    index_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
+    if os.path.exists(index_path):
+        with open(index_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return HTMLResponse(content="<h1>TSun FF Banner API</h1><p>Use <code>/profile?uid=YOUR_UID</code></p>")
 
 def validate_avatar_id(avatar_id: str) -> int:
     if len(avatar_id) != 9 or not avatar_id.isdigit() or not avatar_id.startswith("902"):

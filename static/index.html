@@ -1,0 +1,984 @@
+﻿<!DOCTYPE html>
+<html class="scroll-smooth" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TSun.API | Next-Gen Cyber Banner Engine</title>
+<meta content="High-fidelity, real-time Free Fire banner compositing engine. Zero latency. Zero compromises." name="description"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Spline+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/TextPlugin.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.158.0/three.min.js"></script>
+<script>
+  tailwind.config={theme:{extend:{colors:{primary:'#ff8b52',clay:{base:'#1a1a1e',surface:'#24242a',highlight:'#2d2d35',shadow:'#0d0d0f'}},fontFamily:{sans:['Space Grotesk','Spline Sans','sans-serif']},borderRadius:{clay:'2.5rem'}}}}
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box}
+body{background:#0e0e10;color:#e2e2e7;overflow-x:hidden;font-family:'Space Grotesk','Spline Sans',sans-serif}
+.clay-card{background:#24242a;box-shadow:8px 8px 20px #0a0a0c,-6px -6px 16px #2e2e38,inset 2px 2px 5px rgba(255,255,255,.06),inset -2px -2px 5px rgba(0,0,0,.55);border-radius:2.5rem;transition:transform .4s cubic-bezier(.175,.885,.32,1.275),box-shadow .4s}
+.clay-card:hover{transform:translateY(-6px) scale(1.01);box-shadow:14px 14px 28px #080809,-10px -10px 24px #343440}
+.clay-inset{background:#1a1a1e;box-shadow:inset 6px 6px 14px #0d0d0f,inset -5px -5px 12px #252530;border-radius:1.5rem}
+.clay-button{background:#ff8b52;box-shadow:4px 4px 10px rgba(0,0,0,.35),inset 2px 2px 5px rgba(255,255,255,.35),inset -2px -2px 5px rgba(0,0,0,.25);transition:transform .18s,box-shadow .18s}
+.clay-button:hover{transform:translateY(-2px)}
+.clay-button:active{transform:scale(.95);box-shadow:inset 4px 4px 8px rgba(0,0,0,.4),inset -2px -2px 5px rgba(255,255,255,.1)}
+.glow-orange{text-shadow:0 0 20px rgba(255,139,82,.5)}
+.glow-cyan{text-shadow:0 0 20px rgba(0,225,255,.5)}
+#canvas-container{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+@keyframes scanline{0%{transform:translateY(-100%)}100%{transform:translateY(600%)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+@keyframes pulseRing{0%{transform:scale(1);opacity:.6}100%{transform:scale(2.2);opacity:0}}
+@keyframes gridMove{0%{background-position:0 0}100%{background-position:60px 60px}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes rotateSlow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.float-anim{animation:float 4s ease-in-out infinite}
+.rotate-slow{animation:rotateSlow 12s linear infinite}
+.hero-grid{background-image:linear-gradient(rgba(255,139,82,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,139,82,.04) 1px,transparent 1px);background-size:60px 60px;animation:gridMove 8s linear infinite}
+.shimmer-text{background:linear-gradient(90deg,#ff8b52 0%,#ffce9b 40%,#ff8b52 60%,#ff6020 100%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 3s linear infinite}
+.nav-blur{backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.pulse-ring::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(255,139,82,.4);animation:pulseRing 2s ease-out infinite}
+.reveal{opacity:0;transform:translateY(50px)}
+.reveal-left{opacity:0;transform:translateX(-60px)}
+.reveal-right{opacity:0;transform:translateX(60px)}
+.reveal-scale{opacity:0;transform:scale(.85)}
+#typed-text::after{content:'|';animation:blink .8s step-end infinite;color:#ff8b52}
+input[type=text]{outline:none;transition:box-shadow .3s}
+input[type=text]:focus{box-shadow:inset 6px 6px 14px #0d0d0f,inset -5px -5px 12px #252530,0 0 0 2px rgba(0,225,255,.4)}
+.code-block{background:#0a0a0c;border:1px solid rgba(255,255,255,.06);border-radius:1.25rem;font-family:'Fira Code','Courier New',monospace}
+.token-method{color:#c3e88d}.token-url{color:#89ddff}.token-param{color:#f78c6c}.token-str{color:#c3e88d}.token-header{color:#bb80b3}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#0e0e10}::-webkit-scrollbar-thumb{background:#ff8b52;border-radius:4px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 14px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.3em;text-transform:uppercase}
+.badge-orange{background:rgba(255,139,82,.12);color:#ff8b52;border:1px solid rgba(255,139,82,.25)}
+.badge-cyan{background:rgba(0,225,255,.1);color:#00e1ff;border:1px solid rgba(0,225,255,.2)}
+.badge-green{background:rgba(74,222,128,.1);color:#4ade80;border:1px solid rgba(74,222,128,.2)}
+#result-img{border-radius:1rem}
+</style>
+</head>
+<body class="antialiased">
+
+<!-- NAV -->
+<nav id="navbar" class="fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center bg-[#0e0e10]/80 nav-blur border-b border-white/5 transition-all duration-300">
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 clay-card flex items-center justify-center bg-primary text-white font-black text-xl overflow-hidden">T</div>
+    <span class="font-black text-xl tracking-tighter uppercase">TSun<span class="text-primary">.API</span></span>
+  </div>
+  <div class="hidden md:flex items-center gap-8 font-semibold text-xs uppercase tracking-widest">
+    <a class="hover:text-primary transition-colors duration-200" href="#features">Systems</a>
+    <a class="hover:text-primary transition-colors duration-200" href="#terminal">Terminal</a>
+    <a class="hover:text-primary transition-colors duration-200" href="#tester">Tester</a>
+    <a class="hover:text-primary transition-colors duration-200" href="#endpoints">Endpoints</a>
+  </div>
+  <a href="#tester"><button class="clay-button px-6 py-2.5 rounded-full text-white text-xs font-black uppercase tracking-widest">Try Now</button></a>
+</nav>
+
+<!-- HERO -->
+<section class="relative min-h-screen pt-28 pb-20 flex flex-col items-center justify-center text-center px-4 overflow-hidden hero-grid">
+  <div id="canvas-container"></div>
+  <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+    <div class="w-[700px] h-[700px] rounded-full" style="background:radial-gradient(circle,rgba(255,139,82,.08) 0%,transparent 70%)"></div>
+  </div>
+  <div class="relative z-10 max-w-5xl mx-auto">
+    <div class="badge badge-orange mb-8 mx-auto float-anim" id="hero-badge">
+      <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse inline-block"></span>
+      System Protocol v4.0.1 &mdash; Online
+    </div>
+    <h1 class="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter mb-6 leading-[0.9]" id="hero-title">
+      UNLEASH THE<br/><span class="shimmer-text italic">CYBER BANNER</span>
+    </h1>
+    <p class="text-base md:text-xl text-gray-400 max-w-2xl mx-auto mb-4 font-medium leading-relaxed" id="hero-sub">
+      High-fidelity, real-time image compositing engine for Free Fire creators.
+    </p>
+    <p class="text-lg text-gray-300 font-semibold mb-12 h-8" id="hero-typed-wrap"><span id="typed-text"></span></p>
+    <div class="flex flex-col sm:flex-row gap-5 justify-center mb-20" id="hero-ctas">
+      <a href="#tester"><button class="clay-button px-10 py-5 rounded-clay text-white font-black text-base uppercase tracking-wider group">Launch Tester <span class="inline-block transition-transform group-hover:translate-x-1.5 ml-2">&#8594;</span></button></a>
+      <a href="#terminal"><button class="clay-card px-10 py-5 rounded-clay font-bold text-base uppercase tracking-wider border border-white/10 hover:border-primary/30 transition-colors">View Docs</button></a>
+    </div>
+    <div class="grid grid-cols-3 gap-6 max-w-3xl mx-auto" id="hero-stats">
+      <div class="clay-inset p-6 flex flex-col items-center gap-2">
+        <span class="text-primary text-3xl md:text-4xl font-black glow-orange">4.2ms</span>
+        <span class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Avg Latency</span>
+      </div>
+      <div class="clay-inset p-6 flex flex-col items-center gap-2">
+        <span class="text-primary text-3xl md:text-4xl font-black glow-orange">99.9%</span>
+        <span class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Uptime SLA</span>
+      </div>
+      <div class="clay-inset p-6 flex flex-col items-center gap-2">
+        <span class="text-primary text-3xl md:text-4xl font-black glow-orange">100+</span>
+        <span class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Fonts</span>
+      </div>
+    </div>
+  </div>
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-40 z-10">
+    <span class="text-[10px] uppercase tracking-widest font-bold">Scroll</span>
+    <div class="w-px h-12 bg-gradient-to-b from-primary to-transparent"></div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="py-28 px-6" id="how">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-20 reveal">
+      <span class="badge badge-cyan mb-6 mx-auto">How It Works</span>
+      <h2 class="text-4xl md:text-6xl font-black tracking-tight">Three Steps.<br/><span class="text-primary glow-orange">Infinite Banners.</span></h2>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+      <div class="hidden md:block absolute top-16 left-[16.67%] right-[16.67%] h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
+      <div class="clay-card p-8 flex flex-col items-center text-center gap-5 reveal-scale">
+        <div class="w-14 h-14 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary font-black text-xl">01</div>
+        <h3 class="text-xl font-black uppercase tracking-tight">Grab UID</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">Copy any Free Fire player's UID from their in-game profile screen.</p>
+      </div>
+      <div class="clay-card p-8 flex flex-col items-center text-center gap-5 reveal-scale">
+        <div class="w-14 h-14 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary font-black text-xl">02</div>
+        <h3 class="text-xl font-black uppercase tracking-tight">Call API</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">Pass UID to <code class="text-primary text-xs">/profile?uid=&hellip;</code> and optionally override banner &amp; avatar IDs.</p>
+      </div>
+      <div class="clay-card p-8 flex flex-col items-center text-center gap-5 reveal-scale">
+        <div class="w-14 h-14 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary font-black text-xl">03</div>
+        <h3 class="text-xl font-black uppercase tracking-tight">Get PNG</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">Receive a pixel-perfect 1470&times;315 composited PNG &mdash; ready to embed anywhere.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES – 3D Vertical Orbit Carousel (scroll-locked) -->
+<section class="px-6 overflow-hidden" id="features" style="padding-top:7rem;padding-bottom:7rem;">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-16 reveal">
+      <span class="badge badge-orange mb-6 mx-auto">Core Subsystems</span>
+      <h2 class="text-4xl md:text-6xl font-black tracking-tight mb-4">Built For <span class="text-primary glow-orange">Creators</span></h2>
+      <div class="h-1.5 w-24 bg-primary mx-auto rounded-full" style="box-shadow:0 0 15px rgba(255,139,82,.6)"></div>
+      <p class="text-gray-600 text-xs uppercase tracking-widest font-bold mt-5" id="orbit-hint">Scroll to spin</p>
+    </div>
+
+    <!-- Orbit Stage -->
+    <div id="orbit-stage" class="relative mx-auto select-none" style="height:520px;max-width:520px;perspective:1100px;perspective-origin:50% 50%"></div>
+
+    <!-- Progress bar -->
+    <div class="w-full max-w-xs mx-auto mt-6 clay-inset" style="height:4px;border-radius:999px;overflow:hidden">
+      <div id="orbit-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#ff8b52,#00e1ff);border-radius:999px;transition:width .1s linear;"></div>
+    </div>
+
+    <!-- Dot indicators -->
+    <div id="orbit-dots" class="flex justify-center gap-3 mt-6"></div>
+  </div>
+</section>
+
+<script>
+(function(){
+  const CARDS=[
+    {
+      icon:'<svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>',
+      title:'Hyper-Speed Compositing',
+      desc:'Async FastAPI delivers 1470×315 PNGs in milliseconds, even under heavy concurrent load.',
+      badge:'~4ms avg', badgeCls:'badge-orange'
+    },
+    {
+      icon:'<svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 5h18M3 10h18M3 15h12M3 20h8"/></svg>',
+      title:'Omni-Unicode Support',
+      desc:'Cherokee, Canadian Aboriginal, Tibetan & Latin — every glyph rendered with a multi-font fallback chain.',
+      badge:'4 script engines', badgeCls:'badge-orange'
+    },
+    {
+      icon:'<svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>',
+      title:'Live Player Data',
+      desc:'Pulls real-time AccountName, AccountLevel, GuildName and equipped items on every single request.',
+      badge:'Real-time', badgeCls:'badge-cyan'
+    },
+    {
+      icon:'<svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>',
+      title:'Embed Anywhere',
+      desc:'Returns raw image/png — drop the URL in Discord, websites, bots or any &lt;img&gt; tag.',
+      badge:'image/png', badgeCls:'badge-orange'
+    }
+  ];
+
+  const section  = document.getElementById('features');
+  const stage    = document.getElementById('orbit-stage');
+  const dotsEl   = document.getElementById('orbit-dots');
+  const hintEl   = document.getElementById('orbit-hint');
+  const progBar  = document.getElementById('orbit-progress-bar');
+  const N        = CARDS.length;
+  const STEP     = (Math.PI * 2) / N;
+
+  /* ── Build cards ── */
+  const els = CARDS.map((c,i)=>{
+    const div = document.createElement('div');
+    div.className = 'orbit-card';
+    div.style.cssText='position:absolute;width:300px;left:50%;top:50%;margin-left:-150px;margin-top:-140px;padding:2.5rem;border-radius:2.5rem;background:#24242a;border:2px solid transparent;box-sizing:border-box;transition:border-color .3s;';
+    div.innerHTML=`
+      <div style="width:64px;height:64px;background:#1a1a1e;border-radius:1.25rem;display:flex;align-items:center;justify-content:center;color:#ff8b52;margin-bottom:1.5rem;box-shadow:inset 4px 4px 10px #0d0d0f,inset -3px -3px 8px #252530">${c.icon}</div>
+      <h3 style="font-size:1.15rem;font-weight:900;text-transform:uppercase;letter-spacing:-.02em;margin-bottom:.75rem;color:#e2e2e7">${c.title}</h3>
+      <p style="color:#6b7280;font-size:.875rem;line-height:1.6;margin-bottom:1.25rem">${c.desc}</p>
+      <span class="badge ${c.badgeCls}" style="font-size:10px">${c.badge}</span>`;
+    stage.appendChild(div);
+    return div;
+  });
+
+  /* ── Build dots ── */
+  const dots = CARDS.map((_,i)=>{
+    const d=document.createElement('div');
+    d.style.cssText='width:8px;height:8px;border-radius:50%;background:#2d2d35;transition:background .3s,transform .3s;cursor:pointer;';
+    d.addEventListener('click',()=>setProgress(i/N));
+    dotsEl.appendChild(d);
+    return d;
+  });
+
+  function getRadius(){ return Math.min(stage.offsetWidth, stage.offsetHeight)*0.38; }
+
+  const orbit = { progress:0 };
+
+  /* ── Render loop ── */
+  function render(){
+    const R=getRadius();
+    const baseAngle=orbit.progress*Math.PI*2;
+    let frontIdx=0, maxZ=-Infinity;
+    els.forEach((el,i)=>{
+      const angle=baseAngle+i*STEP;
+      const y=Math.sin(angle)*R*0.55;
+      const z=Math.cos(angle)*R;
+      const x=Math.sin(angle)*R*0.18;
+      const norm=(z+R)/(2*R);
+      const sc=0.62+norm*0.38;
+      const op=0.25+norm*0.75;
+      const zi=Math.round(norm*100);
+      if(zi>maxZ){maxZ=zi;frontIdx=i;}
+      el.style.transform=`translate(${x}px,${y}px) scale(${sc})`;
+      el.style.opacity=op;
+      el.style.zIndex=zi;
+      el.style.boxShadow=norm>0.8?'8px 8px 20px #0a0a0c,-6px -6px 16px #2e2e38,inset 2px 2px 5px rgba(255,255,255,.06)':'2px 2px 8px #0a0a0c';
+    });
+    els.forEach((el,i)=>{ el.style.borderColor=i===frontIdx?'rgba(255,139,82,.55)':'transparent'; });
+    const snapped=Math.round(((orbit.progress%1)+1)%1*N)%N;
+    dots.forEach((d,i)=>{
+      const a=i===snapped;
+      d.style.background=a?'#ff8b52':'#2d2d35';
+      d.style.transform=a?'scale(1.4)':'scale(1)';
+      d.style.boxShadow=a?'0 0 8px rgba(255,139,82,.6)':'none';
+    });
+    // progress bar (0→1 over one full revolution)
+    const pct=(((orbit.progress%1)+1)%1)*100;
+    progBar.style.width=pct+'%';
+  }
+  gsap.ticker.add(render);
+
+  /* ── Scroll-lock state machine ── */
+  // States: 'before' | 'locked' | 'after'
+  let state='before';
+  const SCROLL_NEEDED=900; // px of scroll budget for one full spin
+  let accumulated=0;       // accumulated wheel/touch delta while locked
+
+  function setProgress(p){
+    orbit.progress=p;
+    render();
+  }
+
+  function lockScroll(){
+    document.body.style.overflow='hidden';
+    hintEl.textContent='Spinning… keep scrolling';
+    hintEl.style.color='#ff8b52';
+  }
+  function unlockScroll(){
+    document.body.style.overflow='';
+    hintEl.textContent='Scroll to spin';
+    hintEl.style.color='';
+  }
+
+  function handleDelta(delta){
+    // delta > 0 = scroll down, delta < 0 = scroll up
+    if(state==='before'){
+      // Check if section is ≥90% visible
+      const rect=section.getBoundingClientRect();
+      const vh=window.innerHeight;
+      const visible=Math.min(rect.bottom,vh)-Math.max(rect.top,0);
+      const ratio=visible/rect.height;
+      if(delta>0 && ratio>=0.6){
+        state='locked';
+        accumulated=0;
+        lockScroll();
+        // snap to 0
+        gsap.to(orbit,{progress:0,duration:.4,ease:'power2.out',overwrite:true});
+      }
+      return true; // let page scroll
+    }
+
+    if(state==='after'){
+      if(delta<0){
+        // re-enter from below — lock again, start from end
+        const rect=section.getBoundingClientRect();
+        const vh=window.innerHeight;
+        const visible=Math.min(rect.bottom,vh)-Math.max(rect.top,0);
+        const ratio=visible/rect.height;
+        if(ratio>=0.6){
+          state='locked';
+          accumulated=SCROLL_NEEDED; // start from end so backwards spin works
+          lockScroll();
+          gsap.to(orbit,{progress:1,duration:.4,ease:'power2.out',overwrite:true});
+        }
+      }
+      return true;
+    }
+
+    // state === 'locked'
+    accumulated += delta;
+    const p = Math.max(0, Math.min(1, accumulated / SCROLL_NEEDED));
+    gsap.to(orbit,{progress:p, duration:.25, ease:'power2.out', overwrite:true});
+
+    if(delta>0 && accumulated>=SCROLL_NEEDED){
+      // full forward spin done — unlock, continue scrolling down
+      accumulated=SCROLL_NEEDED;
+      state='after';
+      unlockScroll();
+      return true;
+    }
+    if(delta<0 && accumulated<=0){
+      // scrolled back to start — unlock, continue scrolling up
+      accumulated=0;
+      state='before';
+      unlockScroll();
+      return true;
+    }
+    return false; // consumed by orbit
+  }
+
+  /* ── Wheel ── */
+  window.addEventListener('wheel', e=>{
+    const rect=section.getBoundingClientRect();
+    const vh=window.innerHeight;
+    const visible=Math.min(rect.bottom,vh)-Math.max(rect.top,0);
+    if(visible<=0) return; // section not in view at all
+    const consumed=!handleDelta(e.deltaY);
+    if(consumed) e.preventDefault();
+  },{passive:false});
+
+  /* ── Touch ── */
+  let touchStartY=0;
+  window.addEventListener('touchstart',e=>{ touchStartY=e.touches[0].clientY; },{passive:true});
+  window.addEventListener('touchmove',e=>{
+    const rect=section.getBoundingClientRect();
+    const vh=window.innerHeight;
+    const visible=Math.min(rect.bottom,vh)-Math.max(rect.top,0);
+    if(visible<=0)return;
+    const delta=(touchStartY-e.touches[0].clientY)*2.5;
+    touchStartY=e.touches[0].clientY;
+    const consumed=!handleDelta(delta);
+    if(consumed) e.preventDefault();
+  },{passive:false});
+
+  /* ── Re-check state on normal scroll (for keyboard/scrollbar) ── */
+  window.addEventListener('scroll',()=>{
+    if(state==='locked') return;
+    const rect=section.getBoundingClientRect();
+    const vh=window.innerHeight;
+    if(state==='after' && rect.top>vh*0.5){
+      state='before'; accumulated=0;
+      gsap.to(orbit,{progress:0,duration:.4,ease:'power2.out'});
+    }
+  });
+
+  /* ── Drag on stage ── */
+  let isDragging=false, startY=0, startP=0;
+  stage.addEventListener('pointerdown',e=>{
+    isDragging=true; startY=e.clientY; startP=orbit.progress;
+    stage.setPointerCapture(e.pointerId); stage.style.cursor='grabbing';
+  });
+  stage.addEventListener('pointermove',e=>{
+    if(!isDragging)return;
+    const delta=(e.clientY-startY)/220;
+    orbit.progress=Math.max(0,Math.min(1,startP+delta));
+    accumulated=orbit.progress*SCROLL_NEEDED;
+    render();
+  });
+  stage.addEventListener('pointerup',()=>{ isDragging=false; stage.style.cursor='default'; });
+
+  render();
+})();
+</script>
+
+<!-- ENDPOINTS -->
+<section class="py-28 px-6 bg-[#0a0a0c]" id="endpoints">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-20 reveal">
+      <span class="badge badge-cyan mb-6 mx-auto">API Reference</span>
+      <h2 class="text-4xl md:text-6xl font-black tracking-tight">Endpoint <span class="text-[#00e1ff] glow-cyan">Schema</span></h2>
+    </div>
+    <div class="space-y-6">
+      <div class="clay-card p-8 reveal-left">
+        <div class="flex flex-wrap items-center gap-4 mb-6">
+          <span class="badge badge-green px-4 py-1.5">GET</span>
+          <code class="text-[#00e1ff] font-black text-xl">/profile</code>
+          <span class="text-gray-500 text-sm font-medium">&rarr; Returns composited banner PNG</span>
+        </div>
+        <div class="clay-inset overflow-auto mb-6">
+          <table class="w-full text-left text-sm">
+            <thead class="text-[10px] uppercase tracking-widest text-primary font-black bg-black/20">
+              <tr><th class="px-6 py-3">Param</th><th class="px-6 py-3">Type</th><th class="px-6 py-3">Required</th><th class="px-6 py-3">Description</th></tr>
+            </thead>
+            <tbody class="divide-y divide-white/5 font-medium">
+              <tr><td class="px-6 py-4 text-blue-400 font-bold">uid</td><td class="px-6 py-4 text-gray-500 italic">string</td><td class="px-6 py-4"><span class="badge badge-orange text-[9px]">required</span></td><td class="px-6 py-4 text-gray-400">Free Fire Player UID e.g. <span class="text-primary">Enter Uid...</span></td></tr>
+              <tr><td class="px-6 py-4 text-blue-400 font-bold">banner</td><td class="px-6 py-4 text-gray-500 italic">string</td><td class="px-6 py-4"><span class="badge badge-cyan text-[9px]">optional</span></td><td class="px-6 py-4 text-gray-400">Override Banner ID &mdash; 9 digits starting with <span class="text-primary">901</span></td></tr>
+              <tr><td class="px-6 py-4 text-blue-400 font-bold">avatar</td><td class="px-6 py-4 text-gray-500 italic">string</td><td class="px-6 py-4"><span class="badge badge-cyan text-[9px]">optional</span></td><td class="px-6 py-4 text-gray-400">Override Avatar ID &mdash; 9 digits starting with <span class="text-primary">902</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <pre class="code-block p-5 text-sm overflow-x-auto"><span class="token-method">GET</span> <span class="token-url doc-origin"></span><span class="token-url">/profile</span>?<span class="token-param">uid</span>=<span class="token-str">{uid}</span>&amp;<span class="token-param">banner</span>=<span class="token-str">901000001</span>&amp;<span class="token-param">avatar</span>=<span class="token-str">902000003</span></pre>
+      </div>
+      <div class="clay-card p-8 reveal-right">
+        <div class="flex flex-wrap items-center gap-4 mb-4">
+          <span class="badge badge-green px-4 py-1.5">GET</span>
+          <code class="text-[#00e1ff] font-black text-xl">/health</code>
+          <span class="text-gray-500 text-sm font-medium">&rarr; API heartbeat</span>
+        </div>
+        <pre class="code-block p-5 text-sm overflow-x-auto"><span class="token-method">GET</span> <span class="token-url doc-origin"></span><span class="token-url">/health</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TERMINAL / DOCS -->
+<section class="py-28 px-6" id="terminal">
+  <div class="max-w-7xl mx-auto flex flex-col lg:flex-row gap-16 items-start">
+    <div class="lg:w-5/12 reveal-left">
+      <span class="badge badge-orange mb-6 block">Protocol Reference</span>
+      <h2 class="text-4xl md:text-5xl font-black leading-tight mb-8">Access via the<br/><span class="text-primary italic glow-orange">Terminal</span></h2>
+      <p class="text-gray-400 mb-10 leading-relaxed font-medium">Plain REST. Hit <code class="text-primary">/profile</code> with a UID &mdash; get raw PNG back in milliseconds.</p>
+      <div class="space-y-4 mb-10">
+        <div class="flex items-center gap-4 font-bold text-sm">
+          <div class="w-2.5 h-2.5 rounded-full bg-primary relative pulse-ring"></div>
+          <span class="text-primary uppercase tracking-widest">GET /profile</span>
+          <span class="text-xs text-gray-600 ml-auto">&rarr; image/png</span>
+        </div>
+        <div class="flex items-center gap-4 font-bold text-sm text-gray-500">
+          <div class="w-2.5 h-2.5 rounded-full bg-gray-700"></div>
+          <span class="uppercase tracking-widest">GET /health</span>
+          <span class="text-xs text-gray-700 ml-auto">&rarr; JSON</span>
+        </div>
+        <div class="flex items-center gap-4 font-bold text-sm text-gray-500">
+          <div class="w-2.5 h-2.5 rounded-full bg-gray-700"></div>
+          <span class="uppercase tracking-widest">GET /</span>
+          <span class="text-xs text-gray-700 ml-auto">&rarr; HTML</span>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="clay-inset p-5 flex flex-col gap-1"><span class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Response type</span><span class="text-primary font-black">image/png</span></div>
+        <div class="clay-inset p-5 flex flex-col gap-1"><span class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Image size</span><span class="text-primary font-black">1470&times;315</span></div>
+        <div class="clay-inset p-5 flex flex-col gap-1"><span class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Cache-Control</span><span class="text-primary font-black">5 minutes</span></div>
+        <div class="clay-inset p-5 flex flex-col gap-1"><span class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Timeout</span><span class="text-primary font-black">10s upstream</span></div>
+      </div>
+    </div>
+    <div class="lg:w-7/12 w-full" id="docs-carousel-wrap">
+      <!-- Carousel viewport -->
+      <div id="docs-track-outer" class="relative overflow-hidden rounded-3xl" style="height:440px;">
+        <div id="docs-track" class="flex gap-6 absolute top-0 left-0 will-change-transform" style="width:max-content;padding:0 1rem;">
+
+          <!-- Card 1: cURL Basic -->
+          <div class="docs-card clay-card p-8 shrink-0 flex flex-col gap-4" style="width:520px;">
+            <div class="flex items-center justify-between">
+              <div class="flex gap-2 items-center"><div class="w-3 h-3 rounded-full bg-red-500/60"></div><div class="w-3 h-3 rounded-full bg-yellow-500/60"></div><div class="w-3 h-3 rounded-full bg-green-500/60"></div><span class="ml-3 text-[10px] text-gray-600 font-bold uppercase tracking-widest">cURL &mdash; Basic Request</span></div>
+              <button class="copy-btn clay-button px-4 py-1.5 rounded-full text-white text-[10px] font-black uppercase tracking-widest" data-copy-idx="0">Copy</button>
+            </div>
+            <pre class="code-block p-6 text-sm overflow-x-auto leading-relaxed" id="code-0">curl -L -X GET \
+  '<span class="token-url doc-origin"></span><span class="token-url">/profile?uid=YOUR_UID</span>' \
+  -H '<span class="token-header">accept: image/png</span>' \
+  --output banner.png</pre>
+          </div>
+
+          <!-- Card 2: cURL Overrides -->
+          <div class="docs-card clay-card p-8 shrink-0 flex flex-col gap-4" style="width:520px;">
+            <div class="flex items-center justify-between">
+              <div class="flex gap-2 items-center"><div class="w-3 h-3 rounded-full bg-red-500/60"></div><div class="w-3 h-3 rounded-full bg-yellow-500/60"></div><div class="w-3 h-3 rounded-full bg-green-500/60"></div><span class="ml-3 text-[10px] text-gray-600 font-bold uppercase tracking-widest">cURL &mdash; With Overrides</span></div>
+              <button class="copy-btn clay-button px-4 py-1.5 rounded-full text-white text-[10px] font-black uppercase tracking-widest" data-copy-idx="1">Copy</button>
+            </div>
+            <pre class="code-block p-6 text-sm overflow-x-auto leading-relaxed" id="code-1">curl -L -X GET \
+  '<span class="token-url doc-origin"></span><span class="token-url">/profile</span>?<span class="token-param">uid</span>=<span class="token-str">YOUR_UID</span>&amp;<span class="token-param">banner</span>=<span class="token-str">901000001</span>&amp;<span class="token-param">avatar</span>=<span class="token-str">902000003</span>' \
+  -H '<span class="token-header">accept: image/png</span>' \
+  --output banner_custom.png</pre>
+          </div>
+
+          <!-- Card 3: Python -->
+          <div class="docs-card clay-card p-8 shrink-0 flex flex-col gap-4" style="width:520px;">
+            <div class="flex items-center justify-between">
+              <div class="flex gap-2 items-center"><div class="w-3 h-3 rounded-full bg-red-500/60"></div><div class="w-3 h-3 rounded-full bg-yellow-500/60"></div><div class="w-3 h-3 rounded-full bg-green-500/60"></div><span class="ml-3 text-[10px] text-gray-600 font-bold uppercase tracking-widest">Python &mdash; requests</span></div>
+              <button class="copy-btn clay-button px-4 py-1.5 rounded-full text-white text-[10px] font-black uppercase tracking-widest" data-copy-idx="2">Copy</button>
+            </div>
+            <pre class="code-block p-6 text-sm overflow-x-auto leading-relaxed" id="code-2"><span class="token-method">import</span> requests
+
+url = <span class="token-str">"<span class="doc-origin"></span>/profile"</span>
+params = {<span class="token-str">"uid"</span>: <span class="token-str">"YOUR_UID"</span>}
+
+res = requests.<span class="token-method">get</span>(url, params=params)
+<span class="token-method">with</span> <span class="token-method">open</span>(<span class="token-str">"banner.png"</span>, <span class="token-str">"wb"</span>) as f:
+    f.<span class="token-method">write</span>(res.content)</pre>
+          </div>
+
+          <!-- Card 4: HTML embed -->
+          <div class="docs-card clay-card p-8 shrink-0 flex flex-col gap-4" style="width:520px;">
+            <div class="flex items-center justify-between">
+              <div class="flex gap-2 items-center"><div class="w-3 h-3 rounded-full bg-red-500/60"></div><div class="w-3 h-3 rounded-full bg-yellow-500/60"></div><div class="w-3 h-3 rounded-full bg-green-500/60"></div><span class="ml-3 text-[10px] text-gray-600 font-bold uppercase tracking-widest">HTML &mdash; Embed Direct</span></div>
+              <button class="copy-btn clay-button px-4 py-1.5 rounded-full text-white text-[10px] font-black uppercase tracking-widest" data-copy-idx="3">Copy</button>
+            </div>
+            <pre class="code-block p-6 text-sm overflow-x-auto leading-relaxed" id="code-3">&lt;<span class="token-method">img</span>
+  <span class="token-param">src</span>=<span class="token-str">"<span class="doc-origin"></span>/profile?uid=YOUR_UID"</span>
+  <span class="token-param">alt</span>=<span class="token-str">"Free Fire Banner"</span>
+  <span class="token-param">width</span>=<span class="token-str">"1470"</span> <span class="token-param">height</span>=<span class="token-str">"315"</span>
+/&gt;</pre>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Pill dots -->
+      <div id="docs-dots" class="flex justify-center gap-3 mt-6"></div>
+
+      <!-- Prev / Next arrows -->
+      <div class="flex justify-center gap-4 mt-5">
+        <button id="docs-prev" class="clay-card w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-black transition-colors font-black text-lg">&#8592;</button>
+        <button id="docs-next" class="clay-card w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-black transition-colors font-black text-lg">&#8594;</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  const track    = document.getElementById('docs-track');
+  const outer    = document.getElementById('docs-track-outer');
+  const dotsWrap = document.getElementById('docs-dots');
+  const cards    = Array.from(document.querySelectorAll('.docs-card'));
+  const N        = cards.length;
+  let current    = 0;
+  let autoTimer  = null;
+
+  // Plain-text content for copy (no HTML tags)
+  const copyTexts = [
+    `curl -L -X GET \\\n  '${window.location.origin}/profile?uid=YOUR_UID' \\\n  -H 'accept: image/png' \\\n  --output banner.png`,
+    `curl -L -X GET \\\n  '${window.location.origin}/profile?uid=YOUR_UID&banner=901000001&avatar=902000003' \\\n  -H 'accept: image/png' \\\n  --output banner_custom.png`,
+    `import requests\n\nurl = "${window.location.origin}/profile"\nparams = {"uid": "YOUR_UID"}\n\nres = requests.get(url, params=params)\nwith open("banner.png", "wb") as f:\n    f.write(res.content)`,
+    `<img\n  src="${window.location.origin}/profile?uid=YOUR_UID"\n  alt="Free Fire Banner"\n  width="1470" height="315"\n/>`
+  ];
+
+  // Copy buttons
+  document.querySelectorAll('.copy-btn').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.copyIdx);
+      navigator.clipboard.writeText(copyTexts[idx]).then(()=>{
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.style.background = '#4ade80';
+        gsap.from(btn,{scale:1.2,duration:.3,ease:'elastic.out(2,.5)'});
+        setTimeout(()=>{ btn.textContent=orig; btn.style.background=''; }, 2000);
+      });
+      resetAutoTimer();
+    });
+  });
+
+  // Build dots
+  const dots = cards.map((_,i)=>{
+    const d = document.createElement('div');
+    d.style.cssText='width:28px;height:6px;border-radius:999px;background:#2d2d35;transition:background .3s,width .3s;cursor:pointer;';
+    d.addEventListener('click',()=>{ goTo(i); resetAutoTimer(); });
+    dotsWrap.appendChild(d);
+    return d;
+  });
+
+  function updateDots(){
+    dots.forEach((d,i)=>{
+      d.style.background = i===current ? '#ff8b52' : '#2d2d35';
+      d.style.width      = i===current ? '40px' : '28px';
+      d.style.boxShadow  = i===current ? '0 0 8px rgba(255,139,82,.5)' : 'none';
+    });
+  }
+
+  function getCardX(idx){
+    const gap=24;
+    return cards.slice(0,idx).reduce((sum,c)=>sum+c.offsetWidth+gap,0);
+  }
+
+  function goTo(idx){
+    current = ((idx%N)+N)%N;
+    gsap.to(track,{ x:-getCardX(current), duration:.7, ease:'power3.out' });
+    cards.forEach((c,i)=>{
+      gsap.to(c,{ scale:i===current?1:.9, opacity:i===current?1:.45, duration:.5, ease:'power2.out' });
+    });
+    updateDots();
+  }
+
+  // Auto-advance every 3 seconds
+  function startAutoTimer(){
+    autoTimer = setInterval(()=>goTo(current+1), 3000);
+  }
+  function resetAutoTimer(){
+    clearInterval(autoTimer);
+    startAutoTimer();
+  }
+
+  // Pause on hover, resume on leave
+  outer.addEventListener('mouseenter',()=>clearInterval(autoTimer));
+  outer.addEventListener('mouseleave',()=>startAutoTimer());
+
+  // Initial state
+  cards.forEach((c,i)=>{ c.style.transformOrigin='center'; if(i!==0){c.style.opacity='.45';c.style.transform='scale(.9)';} });
+  updateDots();
+  startAutoTimer();
+
+  // Buttons
+  document.getElementById('docs-next').addEventListener('click',()=>{ goTo(current+1); resetAutoTimer(); });
+  document.getElementById('docs-prev').addEventListener('click',()=>{ goTo(current-1); resetAutoTimer(); });
+
+  // Keyboard
+  document.addEventListener('keydown',e=>{
+    const wrap=document.getElementById('docs-carousel-wrap');
+    if(!wrap)return;
+    const rect=wrap.getBoundingClientRect();
+    if(rect.top<window.innerHeight&&rect.bottom>0){
+      if(e.key==='ArrowRight'){ goTo(current+1); resetAutoTimer(); }
+      if(e.key==='ArrowLeft') { goTo(current-1); resetAutoTimer(); }
+    }
+  });
+
+  // ScrollTrigger — reset to card 0 on enter
+  ScrollTrigger.create({
+    trigger:'#terminal',
+    start:'top 60%',
+    onEnter:()=>gsap.delayedCall(.3,()=>goTo(0))
+  });
+
+  // Drag/swipe
+  let dragStart=null, dragX0=0;
+  outer.addEventListener('pointerdown',e=>{ dragStart=e.clientX; dragX0=gsap.getProperty(track,'x'); outer.setPointerCapture(e.pointerId); clearInterval(autoTimer); });
+  outer.addEventListener('pointermove',e=>{ if(dragStart===null)return; gsap.set(track,{x:dragX0+(e.clientX-dragStart)}); });
+  outer.addEventListener('pointerup',e=>{
+    if(dragStart===null)return;
+    const diff=e.clientX-dragStart;
+    if(Math.abs(diff)>40) goTo(diff<0?current+1:current-1); else goTo(current);
+    dragStart=null;
+    startAutoTimer();
+  });
+})();
+</script>
+
+<!-- LIVE TESTER -->
+<section class="py-28 px-6 bg-[#0a0a0c]" id="tester">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-20 reveal">
+      <span class="badge badge-cyan mb-6 mx-auto">Interactive Console</span>
+      <h2 class="text-4xl md:text-6xl font-black tracking-tight uppercase">Command <span class="text-[#00e1ff] glow-cyan">Center</span></h2>
+      <p class="text-gray-500 font-medium mt-4">Input a target UID to synthesize a banner in real-time.</p>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <!-- Control Panel -->
+      <div class="clay-card p-10 border-t-4 border-[#00e1ff]/30 reveal-left">
+        <div class="flex justify-between items-center mb-10">
+          <span class="text-[10px] font-black text-[#00e1ff] tracking-[0.3em] uppercase">Control Panel v2.0</span>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-bold text-gray-600 uppercase tracking-widest" id="status-label">Terminal: Ready</span>
+            <div class="w-2 h-2 rounded-full bg-green-400" id="status-dot" style="box-shadow:0 0 8px rgba(74,222,128,.8)"></div>
+          </div>
+        </div>
+        <div class="space-y-8">
+          <div>
+            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3">Target Signature (UID) *</label>
+            <input id="inp-uid" class="w-full clay-inset p-5 text-xl font-black tracking-widest text-white bg-transparent" type="text" placeholder="Enter UID&hellip;"/>
+          </div>
+          <div class="grid grid-cols-2 gap-5">
+            <div>
+              <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3">Banner Override</label>
+              <input id="inp-banner" class="w-full clay-inset p-4 text-base font-bold tracking-widest text-white bg-transparent" placeholder="901xxxxxxx" type="text"/>
+              <p class="text-[10px] text-gray-600 mt-2 pl-1">Optional:If Want Custom Banner</p>
+            </div>
+            <div>
+              <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3">Avatar Override</label>
+              <input id="inp-avatar" class="w-full clay-inset p-4 text-base font-bold tracking-widest text-white bg-transparent" placeholder="902xxxxxxx" type="text"/>
+              <p class="text-[10px] text-gray-600 mt-2 pl-1">Optional:If Want Custom Avatar</p>
+            </div>
+          </div>
+          <div id="error-box" class="hidden clay-inset p-4 border border-red-500/30">
+            <p id="error-text" class="text-red-400 text-sm font-bold"></p>
+          </div>
+          <button id="exec-btn" onclick="executeSynthesis()"
+            class="w-full py-6 rounded-clay font-black text-lg uppercase tracking-[0.2em] text-black transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+            style="background:linear-gradient(135deg,#00e1ff,#4e82f7);box-shadow:0 8px 30px rgba(0,225,255,.2)">
+            &#9889; Execute Synthesis
+          </button>
+          <div id="direct-link-wrap" class="hidden">
+            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3">Direct URL</label>
+            <div class="clay-inset p-4 flex items-center gap-3">
+              <code id="direct-url" class="text-primary text-xs break-all flex-1"></code>
+              <button onclick="copyURL()" class="clay-button px-4 py-2 rounded-xl text-white text-xs font-bold uppercase shrink-0">Copy</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Output Panel -->
+      <div class="clay-card p-4 relative overflow-hidden reveal-right" style="min-height:480px">
+        <div id="output-panel" class="absolute inset-4 clay-inset flex flex-col items-center justify-center border border-white/5 overflow-hidden rounded-3xl">
+          <div id="idle-state" class="flex flex-col items-center gap-5 p-8 text-center">
+            <div class="relative">
+              <div class="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-150 animate-pulse"></div>
+              <svg class="w-16 h-16 text-primary relative" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <p class="text-[11px] font-bold uppercase tracking-[0.4em] text-gray-600">Awaiting Transmission&hellip;</p>
+            <p class="text-gray-700 text-xs">Enter a UID and hit Execute</p>
+          </div>
+          <div id="loading-state" class="hidden flex-col items-center gap-5 p-8 text-center">
+            <div class="w-14 h-14 border-4 border-primary/20 border-t-primary rounded-full" style="animation:rotateSlow .8s linear infinite"></div>
+            <p class="text-[11px] font-bold uppercase tracking-[0.4em] text-[#00e1ff]">Synthesizing&hellip;</p>
+          </div>
+          <div id="result-state" class="hidden w-full h-full flex-col items-center justify-center p-6 gap-6">
+            <img id="result-img" src="" alt="Generated Banner" class="w-full rounded-xl shadow-2xl" style="max-height:200px;object-fit:contain"/>
+            <div class="flex gap-4 flex-wrap justify-center">
+              <a id="download-btn" href="#" download="banner.png" class="clay-button px-6 py-3 rounded-full text-white text-xs font-black uppercase tracking-widest">&#11015; Download</a>
+              <button onclick="copyImgURL()" class="clay-card px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest border border-white/10 hover:border-primary/30 transition-colors">&#8858; Copy URL</button>
+            </div>
+            <p id="result-meta" class="text-[10px] text-gray-600 font-bold uppercase tracking-widest"></p>
+          </div>
+          <div class="absolute inset-0 pointer-events-none overflow-hidden rounded-3xl">
+            <div class="absolute w-full h-20 bg-gradient-to-b from-transparent via-white/4 to-transparent" style="animation:scanline 3s linear infinite"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INFO STRIP -->
+<section class="py-20 px-6">
+  <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div class="clay-card p-8 flex flex-col gap-3 reveal-scale">
+      <span class="text-4xl font-black text-primary glow-orange">1470<span class="text-2xl">px</span></span>
+      <h4 class="font-black uppercase tracking-tight">Output Width</h4>
+      <p class="text-gray-500 text-sm leading-relaxed">Standard 1470&times;315 PNG &mdash; avatar left, banner right, name &amp; level overlaid with stroke rendering.</p>
+    </div>
+    <div class="clay-card p-8 flex flex-col gap-3 reveal-scale">
+      <span class="text-4xl font-black text-primary glow-orange">4<span class="text-2xl"> scripts</span></span>
+      <h4 class="font-black uppercase tracking-tight">Unicode Engines</h4>
+      <p class="text-gray-500 text-sm leading-relaxed">Latin, Cherokee, Canadian Aboriginal &amp; Tibetan &mdash; every character rendered pixel-perfectly with per-character font resolution.</p>
+    </div>
+    <div class="clay-card p-8 flex flex-col gap-3 reveal-scale">
+      <span class="text-4xl font-black text-primary glow-orange">0<span class="text-2xl"> keys</span></span>
+      <h4 class="font-black uppercase tracking-tight">Auth Required</h4>
+      <p class="text-gray-500 text-sm leading-relaxed">No API keys, no tokens, no sign-up. Just call the endpoint and get your banner back immediately.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="mt-8 py-16 px-6 bg-[#080809] border-t border-white/5">
+  <div class="max-w-7xl mx-auto">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-10 mb-12">
+      <div>
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-8 h-8 clay-card bg-primary flex items-center justify-center text-white font-black text-sm">T</div>
+          <span class="font-black text-2xl tracking-tighter uppercase">TSun<span class="text-primary">.API</span></span>
+        </div>
+        <p class="text-[11px] text-gray-600 font-bold uppercase tracking-widest max-w-xs">Ultra-Performance Free Fire Image Compositing Interface</p>
+      </div>
+      <div class="flex flex-wrap gap-4">
+        <a href="https://t.me/TSun_FreeFire" target="_blank" class="clay-card px-6 py-3 text-[10px] font-black uppercase tracking-widest hover:text-primary transition-colors flex items-center gap-2">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8l-1.69 7.95c-.12.56-.46.7-.93.44l-2.57-1.9-1.24 1.19c-.14.14-.25.25-.51.25l.18-2.59 4.71-4.25c.2-.18-.04-.28-.32-.1L7.6 14.12 5.06 13.3c-.55-.17-.56-.55.12-.82l8.96-3.45c.46-.17.86.11.5.77z"/></svg>
+          Telegram
+        </a>
+        <a href="https://discord.gg/NqjNdHa9" class="clay-card px-6 py-3 text-[10px] font-black uppercase tracking-widest hover:text-primary transition-colors">Channel</a>
+        <div class="clay-inset px-6 py-3 flex items-center gap-3">
+          <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+          <span class="text-[10px] font-black uppercase tracking-widest text-primary">Status: Online</span>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 py-10 border-t border-b border-white/5 mb-10">
+      <div>
+        <h5 class="text-[10px] text-gray-600 font-black uppercase tracking-widest mb-4">Endpoints</h5>
+        <ul class="space-y-2 text-sm font-medium text-gray-500">
+          <li><a href="#tester" class="hover:text-primary transition-colors">/profile</a></li>
+          <li><a href="#" class="hover:text-primary transition-colors">/health</a></li>
+          <li><a href="#" class="hover:text-primary transition-colors">/</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5 class="text-[10px] text-gray-600 font-black uppercase tracking-widest mb-4">Params</h5>
+        <ul class="space-y-2 text-sm font-medium text-gray-500">
+          <li>uid</li><li>banner</li><li>avatar</li>
+        </ul>
+      </div>
+      <div>
+        <h5 class="text-[10px] text-gray-600 font-black uppercase tracking-widest mb-4">Stack</h5>
+        <ul class="space-y-2 text-sm font-medium text-gray-500">
+          <li>FastAPI</li><li>Pillow</li><li>httpx</li>
+        </ul>
+      </div>
+      <div>
+        <h5 class="text-[10px] text-gray-600 font-black uppercase tracking-widest mb-4">Host</h5>
+        <ul class="space-y-2 text-sm font-medium text-gray-500">
+          <li>Render.com</li><li>Vercel</li><li>Docker</li>
+        </ul>
+      </div>
+    </div>
+    <div class="text-center">
+      <p class="text-[10px] text-gray-700 font-bold uppercase tracking-[0.3em]">&copy; 2026 TSun-Kittens-Labs. All Rights Reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- Three.js -->
+<script>
+(function(){
+  const c=document.getElementById('canvas-container');
+  if(!c||typeof THREE==='undefined')return;
+  const scene=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(60,c.clientWidth/c.clientHeight,.1,1000);
+  const ren=new THREE.WebGLRenderer({alpha:true,antialias:true});
+  ren.setSize(c.clientWidth,c.clientHeight);
+  ren.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  c.appendChild(ren.domElement);
+  const mc=new THREE.MeshStandardMaterial({color:0xff8b52,roughness:.85,metalness:.05});
+  const mb=new THREE.MeshStandardMaterial({color:0x00e1ff,roughness:.85,metalness:.05,transparent:true,opacity:.6});
+  const torus=new THREE.Mesh(new THREE.TorusGeometry(9,2.5,32,120),mc);
+  torus.position.set(-18,0,-20);scene.add(torus);
+  const sphere=new THREE.Mesh(new THREE.SphereGeometry(4,32,32),mb);
+  sphere.position.set(20,5,-25);scene.add(sphere);
+  const box=new THREE.Mesh(new THREE.BoxGeometry(5,5,5),mc);
+  box.position.set(0,-10,-30);scene.add(box);
+  const sun=new THREE.DirectionalLight(0xffffff,1.4);sun.position.set(10,10,10);scene.add(sun);
+  scene.add(new THREE.AmbientLight(0x404050,2.5));
+  cam.position.z=30;
+  let mx=0,my=0;
+  document.addEventListener('mousemove',e=>{mx=(e.clientX/window.innerWidth-.5)*2;my=(e.clientY/window.innerHeight-.5)*2;});
+  (function animate(){
+    requestAnimationFrame(animate);
+    torus.rotation.x+=.004;torus.rotation.y+=.006;
+    sphere.rotation.y+=.008;
+    box.rotation.x+=.005;box.rotation.z+=.003;
+    cam.position.x+=(mx*4-cam.position.x)*.04;
+    cam.position.y+=(-my*4-cam.position.y)*.04;
+    cam.lookAt(scene.position);
+    ren.render(scene,cam);
+  })();
+  window.addEventListener('resize',()=>{cam.aspect=c.clientWidth/c.clientHeight;cam.updateProjectionMatrix();ren.setSize(c.clientWidth,c.clientHeight);});
+})();
+</script>
+
+<!-- GSAP -->
+<script>
+gsap.registerPlugin(ScrollTrigger,TextPlugin);
+const heroTL=gsap.timeline({delay:.2});
+heroTL
+  .from('#hero-badge',{y:-30,opacity:0,duration:.8,ease:'back.out(2)'})
+  .from('#hero-title',{y:80,opacity:0,duration:1.2,ease:'power4.out'},'-=.4')
+  .from('#hero-sub',{y:30,opacity:0,duration:.8,ease:'power3.out'},'-=.7')
+  .from('#hero-typed-wrap',{y:20,opacity:0,duration:.5},'-=.4')
+  .from('#hero-ctas',{y:30,opacity:0,duration:.8,ease:'back.out(1.5)'},'-=.3')
+  .from('#hero-stats > *',{y:40,opacity:0,scale:.85,duration:.8,stagger:.12,ease:'elastic.out(1,.75)'},'-=.4');
+
+const phrases=['Zero latency. Zero compromises.','Render any banner in milliseconds.','Unicode-perfect. Pixel-perfect.','Free. Forever. Open.'];
+let pi=0;
+function typePhrase(){
+  const el=document.getElementById('typed-text');
+  if(!el)return;
+  const p=phrases[pi%phrases.length];pi++;
+  gsap.to(el,{duration:p.length*.06,text:p,ease:'none',onComplete:()=>setTimeout(()=>gsap.to(el,{duration:.5,text:'',ease:'none',onComplete:typePhrase}),2200)});
+}
+typePhrase();
+
+ScrollTrigger.create({start:'top -80',onEnter:()=>document.getElementById('navbar').style.padding='.5rem 1.5rem',onLeaveBack:()=>document.getElementById('navbar').style.padding='1rem 1.5rem'});
+
+function makeReveal(sel,extra,stg){
+  gsap.utils.toArray(sel).forEach((el,i)=>{
+    gsap.to(el,Object.assign({opacity:1,x:0,y:0,scale:1,duration:.9,delay:stg*i,ease:'elastic.out(1,.75)',scrollTrigger:{trigger:el,start:'top 88%',toggleActions:'play none none none'}},extra||{}));
+  });
+}
+makeReveal('.reveal',{},0.06);
+makeReveal('.reveal-left',{},0.08);
+makeReveal('.reveal-right',{},0.08);
+makeReveal('.reveal-scale',{},0.1);
+
+gsap.utils.toArray('h2').forEach(h=>gsap.from(h,{opacity:0,y:40,duration:1,ease:'power3.out',scrollTrigger:{trigger:h,start:'top 85%'}}));
+gsap.utils.toArray('.code-block').forEach(cb=>gsap.from(cb,{opacity:0,x:30,duration:.8,ease:'power3.out',scrollTrigger:{trigger:cb,start:'top 90%'}}));
+</script>
+
+<!-- Dynamic origin injection -->
+<script>
+document.querySelectorAll('.doc-origin').forEach(el=>el.textContent=window.location.origin);
+</script>
+
+<!-- Tester Logic -->
+<script>
+const BASE=window.location.origin;
+let lastURL='';
+function showState(s){
+  ['idle','loading','result'].forEach(n=>{const el=document.getElementById(n+'-state');el.classList.add('hidden');el.classList.remove('flex');});
+  const el=document.getElementById(s+'-state');el.classList.remove('hidden');el.classList.add('flex');
+}
+function setStatus(t,c){
+  document.getElementById('status-label').textContent=t;
+  const d=document.getElementById('status-dot');d.style.background=c;d.style.boxShadow='0 0 8px '+c;
+}
+function showError(m){
+  const b=document.getElementById('error-box');document.getElementById('error-text').textContent=m;b.classList.remove('hidden');
+  gsap.from(b,{x:-10,duration:.4,ease:'elastic.out(2,.5)'});
+}
+function hideError(){document.getElementById('error-box').classList.add('hidden');}
+function buildURL(){
+  const uid=document.getElementById('inp-uid').value.trim();
+  const banner=document.getElementById('inp-banner').value.trim();
+  const avatar=document.getElementById('inp-avatar').value.trim();
+  if(!uid)return null;
+  let u=BASE+'/profile?uid='+encodeURIComponent(uid);
+  if(banner)u+='&banner='+encodeURIComponent(banner);
+  if(avatar)u+='&avatar='+encodeURIComponent(avatar);
+  return u;
+}
+function validate(){
+  const uid=document.getElementById('inp-uid').value.trim();
+  const banner=document.getElementById('inp-banner').value.trim();
+  const avatar=document.getElementById('inp-avatar').value.trim();
+  if(!uid){showError('UID is required.');return false;}
+  if(banner&&(banner.length!==9||!banner.startsWith('901')||!/^\d+$/.test(banner))){showError('Banner ID must be 9 digits starting with 901.');return false;}
+  if(avatar&&(avatar.length!==9||!avatar.startsWith('902')||!/^\d+$/.test(avatar))){showError('Avatar ID must be 9 digits starting with 902.');return false;}
+  return true;
+}
+async function executeSynthesis(){
+  hideError();
+  if(!validate())return;
+  const url=buildURL();lastURL=url;
+  const btn=document.getElementById('exec-btn');
+  btn.disabled=true;btn.textContent='Synthesizing\u2026';
+  showState('loading');setStatus('Transmitting\u2026','#00e1ff');
+  const t0=Date.now();
+  try{
+    const resp=await fetch(url,{headers:{accept:'image/png'}});
+    if(!resp.ok){let d='HTTP '+resp.status;try{const j=await resp.json();d=j.detail||d;}catch{}throw new Error(d);}
+    const blob=await resp.blob();
+    const objURL=URL.createObjectURL(blob);
+    const elapsed=((Date.now()-t0)/1000).toFixed(2);
+    const img=document.getElementById('result-img');
+    img.src=objURL;
+    document.getElementById('download-btn').href=objURL;
+    document.getElementById('direct-url').textContent=url;
+    document.getElementById('direct-link-wrap').classList.remove('hidden');
+    document.getElementById('result-meta').textContent='Rendered in '+elapsed+'s \u00b7 1470\u00d7315 \u00b7 image/png';
+    showState('result');setStatus('Synthesis OK','#4ade80');
+    gsap.from('#result-img',{scale:.8,opacity:0,duration:.8,ease:'elastic.out(1,.7)'});
+  }catch(e){
+    showError(e.message||'Request failed.');showState('idle');setStatus('Error','#f87171');
+  }finally{
+    btn.disabled=false;btn.textContent='\u26a1 Execute Synthesis';
+  }
+}
+function copyURL(){
+  navigator.clipboard.writeText(lastURL).then(()=>{const b=event.target;b.textContent='Copied!';setTimeout(()=>b.textContent='Copy',2000);});
+}
+function copyImgURL(){
+  navigator.clipboard.writeText(lastURL).then(()=>gsap.to('#result-meta',{color:'#4ade80',duration:.3,yoyo:true,repeat:1}));
+}
+document.getElementById('inp-uid').addEventListener('keydown',e=>{if(e.key==='Enter')executeSynthesis();});
+</script>
+</body>
+</html>
