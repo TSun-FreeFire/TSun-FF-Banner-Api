@@ -6,3 +6,4 @@ python-multipart
 starlette
 anyio
 aiofiles
+fonttools

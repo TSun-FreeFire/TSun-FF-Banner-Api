@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from PIL import Image, ImageDraw, ImageFont
 from concurrent.futures import ThreadPoolExecutor
+from fontTools.ttLib import TTFont
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -32,10 +33,32 @@ if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 INFO_API_URL = "https://tsun-ff-infoxvisits.onrender.com/info"
-FONT_FILE = "arial_unicode_bold.otf"
-FONT_CHEROKEE = "NotoSansCherokee.ttf"
-FONT_CANADIAN_ABORIGINAL = "NotoSansCanadianAboriginal-Regular.ttf"
-FONT_TIBETAN = "NotoSerifTibetan-Regular.ttf"
+FONTS_DIR = os.path.join(os.path.dirname(__file__), "fonts")
+FONT_FILE = os.path.join(FONTS_DIR, "arial_unicode_bold.otf")
+FONT_CHEROKEE = os.path.join(FONTS_DIR, "NotoSansCherokee.ttf")
+FONT_CANADIAN_ABORIGINAL = os.path.join(FONTS_DIR, "NotoSansCanadianAboriginal-Regular.ttf")
+FONT_TIBETAN = os.path.join(FONTS_DIR, "NotoSerifTibetan-Regular.ttf")
+FONT_SANS_SERIF_COLLECTION = os.path.join(FONTS_DIR, "SansSerifCollection.ttf")
+
+def _build_cmap(font_file):
+    """Return the set of supported Unicode codepoints for a font file."""
+    try:
+        path = font_file
+        if os.path.exists(path):
+            tt = TTFont(path, lazy=True)
+            cmap = tt.getBestCmap()
+            if cmap:
+                return set(cmap.keys())
+    except Exception:
+        pass
+    return set()
+
+_CMAP_MAIN         = _build_cmap(FONT_FILE)
+_CMAP_CHEROKEE     = _build_cmap(FONT_CHEROKEE)
+_CMAP_CANADIAN     = _build_cmap(FONT_CANADIAN_ABORIGINAL)
+_CMAP_TIBETAN      = _build_cmap(FONT_TIBETAN)
+_CMAP_SANS_SERIF   = _build_cmap(FONT_SANS_SERIF_COLLECTION)
+_CMAP_ALL          = _CMAP_MAIN | _CMAP_CHEROKEE | _CMAP_CANADIAN | _CMAP_TIBETAN | _CMAP_SANS_SERIF
 
 client = httpx.AsyncClient(
     headers={"User-Agent": "Mozilla/5.0"},
@@ -47,7 +70,7 @@ process_pool = ThreadPoolExecutor(max_workers=4)
 
 def load_unicode_font(size, font_file=FONT_FILE):
     try:
-        font_path = os.path.join(os.path.dirname(__file__), font_file)
+        font_path = font_file
         if os.path.exists(font_path):
             return ImageFont.truetype(font_path, size)
         return ImageFont.load_default()
@@ -80,6 +103,7 @@ def bytes_to_image(img_bytes):
 def process_banner_image(data, avatar_bytes, banner_bytes, pin_bytes):
     avatar_img = bytes_to_image(avatar_bytes) or Image.new('RGBA', (325, 315), (0, 0, 0, 0))
     banner_img = bytes_to_image(banner_bytes) or Image.new('RGBA', (1145, 315), (0, 0, 0, 0))
+    banner_img = banner_img.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
     pin_img    = bytes_to_image(pin_bytes)
 
     level = str(data.get("AccountLevel") or "0")
@@ -108,10 +132,12 @@ def process_banner_image(data, avatar_bytes, banner_bytes, pin_bytes):
     font_large_cherokee = load_unicode_font(NAME_H, FONT_CHEROKEE)
     font_large_canadian = load_unicode_font(NAME_H, FONT_CANADIAN_ABORIGINAL)
     font_large_tibetan = load_unicode_font(NAME_H, FONT_TIBETAN)
+    font_large_sans_serif = load_unicode_font(NAME_H, FONT_SANS_SERIF_COLLECTION)
     font_small = load_unicode_font(GUILD_H)
     font_small_cherokee = load_unicode_font(GUILD_H, FONT_CHEROKEE)
     font_small_canadian = load_unicode_font(GUILD_H, FONT_CANADIAN_ABORIGINAL)
     font_small_tibetan = load_unicode_font(GUILD_H, FONT_TIBETAN)
+    font_small_sans_serif = load_unicode_font(GUILD_H, FONT_SANS_SERIF_COLLECTION)
     font_level = load_unicode_font(LVL_H)
 
     def is_cherokee(char):
@@ -126,19 +152,25 @@ def process_banner_image(data, avatar_bytes, banner_bytes, pin_bytes):
         code = ord(char)
         return 0x0F00 <= code <= 0x0FFF
 
-    def resolve_font(char, font_main, font_cherokee, font_canadian, font_tibetan):
+    def resolve_font(char, font_main, font_cherokee, font_canadian, font_tibetan, font_sans_serif):
         if is_cherokee(char):
             return font_cherokee
         if is_canadian_aboriginal(char):
             return font_canadian
         if is_tibetan(char):
             return font_tibetan
+        cp = ord(char)
+        if cp > 127 and cp not in _CMAP_MAIN and cp in _CMAP_SANS_SERIF:
+            return font_sans_serif
         return font_main
 
-    def draw_text_with_stroke(x, y, text, font_main, font_cherokee, font_canadian, font_tibetan, size):
+    def draw_text_with_stroke(x, y, text, font_main, font_cherokee, font_canadian, font_tibetan, font_sans_serif, size):
         current_x = x
         for char in text:
-            font = resolve_font(char, font_main, font_cherokee, font_canadian, font_tibetan)
+            # Skip characters not supported by any available font to avoid {box} glyphs
+            if ord(char) > 127 and ord(char) not in _CMAP_ALL:
+                continue
+            font = resolve_font(char, font_main, font_cherokee, font_canadian, font_tibetan, font_sans_serif)
             for dx in range(-size, size + 1):
                 for dy in range(-size, size + 1):
                     draw.text((current_x + dx, y + dy), char, font=font, fill=stroke_col)
@@ -146,8 +178,8 @@ def process_banner_image(data, avatar_bytes, banner_bytes, pin_bytes):
             current_x += font.getlength(char)
 
     stroke_col, text_col = "black", "white"
-    draw_text_with_stroke(NAME_X, NAME_Y, name, font_large, font_large_cherokee, font_large_canadian, font_large_tibetan, 4)
-    draw_text_with_stroke(GUILD_X, GUILD_Y, guild, font_small, font_small_cherokee, font_small_canadian, font_small_tibetan, 3)
+    draw_text_with_stroke(NAME_X, NAME_Y, name, font_large, font_large_cherokee, font_large_canadian, font_large_tibetan, font_large_sans_serif, 4)
+    draw_text_with_stroke(GUILD_X, GUILD_Y, guild, font_small, font_small_cherokee, font_small_canadian, font_small_tibetan, font_small_sans_serif, 3)
 
     if pin_img is not None:
         pin_size = 130

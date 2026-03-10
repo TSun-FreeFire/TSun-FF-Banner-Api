@@ -2,7 +2,7 @@
 <html class="scroll-smooth" lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0" name="viewport"/>
 <title>TSun.API | Next-Gen Cyber Banner Engine</title>
 <meta content="High-fidelity, real-time Free Fire banner compositing engine. Zero latency. Zero compromises." name="description"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -18,7 +18,8 @@
 </script>
 <style>
 *,*::before,*::after{box-sizing:border-box}
-body{background:#0e0e10;color:#e2e2e7;overflow-x:hidden;font-family:'Space Grotesk','Spline Sans',sans-serif}
+html{zoom:0.8;-moz-transform:scale(0.8);-moz-transform-origin:0 0;-moz-width:125%}
+body{background:#0e0e10;color:#e2e2e7;overflow-x:hidden;font-family:'Space Grotesk','Spline Sans',sans-serif;width:100%}
 .clay-card{background:#24242a;box-shadow:8px 8px 20px #0a0a0c,-6px -6px 16px #2e2e38,inset 2px 2px 5px rgba(255,255,255,.06),inset -2px -2px 5px rgba(0,0,0,.55);border-radius:2.5rem;transition:transform .4s cubic-bezier(.175,.885,.32,1.275),box-shadow .4s}
 .clay-card:hover{transform:translateY(-6px) scale(1.01);box-shadow:14px 14px 28px #080809,-10px -10px 24px #343440}
 .clay-inset{background:#1a1a1e;box-shadow:inset 6px 6px 14px #0d0d0f,inset -5px -5px 12px #252530;border-radius:1.5rem}
@@ -56,6 +57,39 @@ input[type=text]:focus{box-shadow:inset 6px 6px 14px #0d0d0f,inset -5px -5px 12p
 .badge-cyan{background:rgba(0,225,255,.1);color:#00e1ff;border:1px solid rgba(0,225,255,.2)}
 .badge-green{background:rgba(74,222,128,.1);color:#4ade80;border:1px solid rgba(74,222,128,.2)}
 #result-img{border-radius:1rem}
+/* ── Mobile / Tablet fixes ── */
+@media (max-width:768px){
+  html{zoom:1;-moz-transform:none;-moz-width:auto}
+  h1{font-size:3.5rem!important;line-height:1!important}
+  #hero-stats{grid-template-columns:repeat(3,1fr);gap:8px}
+  #hero-stats .clay-inset{padding:12px 8px}
+  #hero-stats span.text-3xl{font-size:1.4rem}
+  #orbit-stage{height:360px!important;max-width:360px!important}
+  .orbit-card{width:240px!important;margin-left:-120px!important;margin-top:-110px!important;padding:1.5rem!important}
+  #docs-track-outer{height:auto!important;min-height:320px}
+  .docs-card{width:calc(100vw - 3rem)!important}
+  #docs-carousel-wrap{overflow:hidden}
+  .grid-cols-2{grid-template-columns:1fr!important}
+  .lg\:grid-cols-2{grid-template-columns:1fr!important}
+  .clay-card.p-10{padding:1.5rem!important}
+  input[type=text]{font-size:1rem!important;padding:0.875rem 1rem!important}
+  #exec-btn{font-size:1rem!important;padding:1rem!important}
+  table{font-size:.75rem}
+  table th,table td{padding:.5rem .75rem!important}
+  pre.code-block{font-size:.7rem!important;padding:1rem!important}
+  .py-28{padding-top:3.5rem!important;padding-bottom:3.5rem!important}
+  .gap-16{gap:2rem!important}
+  .text-4xl{font-size:2rem!important}
+  .text-6xl{font-size:2.5rem!important}
+  footer .grid{grid-template-columns:repeat(2,1fr)!important}
+}
+@media (min-width:769px) and (max-width:1024px){
+  html{zoom:0.75;-moz-transform:scale(0.75);-moz-transform-origin:0 0;-moz-width:133.33%}
+  #orbit-stage{height:440px!important;max-width:440px!important}
+  .orbit-card{width:260px!important;margin-left:-130px!important}
+  .docs-card{width:420px!important}
+  #docs-track-outer{height:400px!important}
+}
 </style>
 </head>
 <body class="antialiased">
@@ -157,7 +191,7 @@ input[type=text]:focus{box-shadow:inset 6px 6px 14px #0d0d0f,inset -5px -5px 12p
     </div>
 
     <!-- Orbit Stage -->
-    <div id="orbit-stage" class="relative mx-auto select-none" style="height:520px;max-width:520px;perspective:1100px;perspective-origin:50% 50%"></div>
+    <div id="orbit-stage" class="relative mx-auto select-none" style="height:clamp(300px,50vw,520px);max-width:clamp(300px,50vw,520px);perspective:1100px;perspective-origin:50% 50%"></div>
 
     <!-- Progress bar -->
     <div class="w-full max-w-xs mx-auto mt-6 clay-inset" style="height:4px;border-radius:999px;overflow:hidden">
@@ -473,7 +507,7 @@ input[type=text]:focus{box-shadow:inset 6px 6px 14px #0d0d0f,inset -5px -5px 12p
     </div>
     <div class="lg:w-7/12 w-full" id="docs-carousel-wrap">
       <!-- Carousel viewport -->
-      <div id="docs-track-outer" class="relative overflow-hidden rounded-3xl" style="height:440px;">
+      <div id="docs-track-outer" class="relative overflow-hidden rounded-3xl" style="height:clamp(340px,55vw,440px);">
         <div id="docs-track" class="flex gap-6 absolute top-0 left-0 will-change-transform" style="width:max-content;padding:0 1rem;">
 
           <!-- Card 1: cURL Basic -->
