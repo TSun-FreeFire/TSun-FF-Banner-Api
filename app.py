@@ -1,5 +1,7 @@
 import io
 import os
+import sys
+import time
 import asyncio
 import httpx
 from typing import Optional, AsyncGenerator
@@ -7,16 +9,28 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from PIL import Image, ImageDraw, ImageFont
 from concurrent.futures import ThreadPoolExecutor
 from fontTools.ttLib import TTFont
 
+_START_TIME   = time.time()
+_RENDER_COUNT = 0
+client: httpx.AsyncClient = None  # type: ignore[assignment]  # set in lifespan
+process_pool: ThreadPoolExecutor  = None  # type: ignore[assignment]  # set in lifespan
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    global client, process_pool
+    client = httpx.AsyncClient(
+        headers={"User-Agent": "Mozilla/5.0"},
+        timeout=10.0,
+        follow_redirects=True
+    )
+    process_pool = ThreadPoolExecutor(max_workers=4)
     yield
     await client.aclose()
-    process_pool.shutdown()
+    process_pool.shutdown(wait=False)
 
 app = FastAPI(lifespan=lifespan)
 
@@ -59,14 +73,6 @@ _CMAP_CANADIAN     = _build_cmap(FONT_CANADIAN_ABORIGINAL)
 _CMAP_TIBETAN      = _build_cmap(FONT_TIBETAN)
 _CMAP_SANS_SERIF   = _build_cmap(FONT_SANS_SERIF_COLLECTION)
 _CMAP_ALL          = _CMAP_MAIN | _CMAP_CHEROKEE | _CMAP_CANADIAN | _CMAP_TIBETAN | _CMAP_SANS_SERIF
-
-client = httpx.AsyncClient(
-    headers={"User-Agent": "Mozilla/5.0"},
-    timeout=10.0,
-    follow_redirects=True
-)
-
-process_pool = ThreadPoolExecutor(max_workers=4)
 
 def load_unicode_font(size, font_file=FONT_FILE):
     try:
@@ -200,7 +206,55 @@ async def home():
     if os.path.exists(index_path):
         with open(index_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
-    return HTMLResponse(content="<h1>TSun FF Banner API</h1><p>Use <code>/profile?uid=YOUR_UID</code></p>")
+    return HTMLResponse(content="<h1>TSun Banner Api</h1><p>Use <code>/profile?uid=YOUR_UID</code></p>")
+
+
+@app.get("/health")
+async def health():
+    global _RENDER_COUNT
+    uptime_seconds = round(time.time() - _START_TIME)
+    days,    rem1      = divmod(uptime_seconds, 86400)
+    hours,   rem2      = divmod(rem1, 3600)
+    minutes, seconds   = divmod(rem2, 60)
+
+    parts = []
+    if days:    parts.append(f"{days}d")
+    if hours:   parts.append(f"{hours}h")
+    if minutes: parts.append(f"{minutes}m")
+    parts.append(f"{seconds}s")
+    uptime_human = " ".join(parts)
+
+    return JSONResponse({
+        "status": "ok",
+        "service": "TSun Banner Api",
+        "version": "2.6.0",
+        "uptime": uptime_human,
+        "uptime_seconds": uptime_seconds,
+        "banners_rendered": _RENDER_COUNT,
+        "python": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        "environment": os.getenv("APP_ENV", "production"),
+    })
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    # Serve local file first
+    favicon_path = os.path.join(os.path.dirname(__file__), "static", "favicon.ico")
+    if os.path.exists(favicon_path):
+        with open(favicon_path, "rb") as f:
+            return Response(content=f.read(), media_type="image/x-icon")
+    # Fall back to Icons8 Free Fire icon (proxied so the browser gets it from our origin)
+    try:
+        r = await client.get(
+            "https://img.icons8.com/?id=S82R0mhIAwEg&format=png&size=32",
+            timeout=5.0
+        )
+        if r.status_code == 200:
+            return Response(content=r.content, media_type="image/png",
+                            headers={"Cache-Control": "public, max-age=86400"})
+    except Exception:
+        pass
+    return Response(status_code=204)
 
 def validate_avatar_id(avatar_id: str) -> int:
     if len(avatar_id) != 9 or not avatar_id.isdigit() or not avatar_id.startswith("902"):
@@ -258,6 +312,8 @@ async def get_banner(uid: str, banner: Optional[str] = None, avatar: Optional[st
             banner_data, avatar_bytes, banner_bytes, pin_bytes
         )
         
+        global _RENDER_COUNT
+        _RENDER_COUNT += 1
         return Response(content=img_io.getvalue(), media_type="image/png", headers={"Cache-Control": "public, max-age=300"})
 
     except Exception as e:
