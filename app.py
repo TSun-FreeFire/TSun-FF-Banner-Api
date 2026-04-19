@@ -46,7 +46,7 @@ STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-INFO_API_URL = "https://tsun-ff-infoxvisits.onrender.com/info"
+INFO_API_URL = "https://infoxvisits.tsunxkittens.app/info"
 FONTS_DIR = os.path.join(os.path.dirname(__file__), "fonts")
 FONT_FILE = os.path.join(FONTS_DIR, "arial_unicode_bold.otf")
 FONT_CHEROKEE = os.path.join(FONTS_DIR, "NotoSansCherokee.ttf")
