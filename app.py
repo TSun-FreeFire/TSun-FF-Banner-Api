@@ -202,10 +202,13 @@ def process_banner_image(data, avatar_bytes, banner_bytes, pin_bytes):
 
 @app.get("/", response_class=HTMLResponse)
 async def home():
-    index_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
-    if os.path.exists(index_path):
-        with open(index_path, "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
+    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    candidate_pages = ["retro.html", "index.html"]
+    for page_name in candidate_pages:
+        page_path = os.path.join(static_dir, page_name)
+        if os.path.exists(page_path):
+            with open(page_path, "r", encoding="utf-8") as f:
+                return HTMLResponse(content=f.read())
     return HTMLResponse(content="<h1>TSun Banner Api</h1><p>Use <code>/profile?uid=YOUR_UID</code></p>")
 
 
