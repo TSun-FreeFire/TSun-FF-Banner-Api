@@ -1,0 +1,60 @@
+{
+  "project_config": {
+    "name": "TSun-FF-BANNER-API",
+    "version": "5.3",
+    "last_updated": "2026-04-20",
+    "environment": "production"
+  },
+  "assets": [
+    {
+      "id": 1,
+      "url": "https://wallpapers.com/images/featured/black-and-white-anime-pfp-nznyxdw9wkm83h7a.jpg",
+      "category": "anime_pfp"
+    },
+    {
+      "id": 2,
+      "url": "https://aurapfp.com/wp-content/uploads/2026/02/Cute-Anime-Girl-PFP-Black-And-White.webp",
+      "category": "anime_pfp"
+    },
+    {
+      "id": 3,
+      "url": "https://aurapfp.com/wp-content/uploads/2026/02/Cute-PFP-Black-Aesthetic-Style.webp",
+      "category": "aesthetic"
+    },
+    {
+      "id": 4,
+      "url": "https://aurapfp.com/wp-content/uploads/2026/02/Cute-PFP-Black-Stylish-Look.webp",
+      "category": "aesthetic"
+    },
+    {
+      "id": 5,
+      "url": "https://aurapfp.com/wp-content/uploads/2026/02/Black-PFP-Aesthetic-2.webp",
+      "category": "aesthetic"
+    },
+    {
+      "id": 6,
+      "url": "https://aurapfp.com/wp-content/uploads/2026/02/Black-PFP-Boy-3.webp",
+      "category": "boy_pfp"
+    },
+    {
+      "id": 7,
+      "url": "https://aurapfp.com/wp-content/uploads/2026/02/Black-PFP-Pinterest-Style-4.webp",
+      "category": "aesthetic"
+    },
+    {
+      "id": 8,
+      "url": "https://aurapfp.com/wp-content/uploads/2026/02/Black-Aesthetic-PFP-Boy2.jpg",
+      "category": "boy_pfp"
+    },
+    {
+      "id": 9,
+      "url": "https://aurapfp.com/wp-content/uploads/2026/02/Cute-PFP-Black-And-White-4.webp",
+      "category": "anime_pfp"
+    },
+    {
+      "id": 10,
+      "url": "https://aurapfp.com/wp-content/uploads/2026/02/Cute-PFP-Black-2.webp",
+      "category": "aesthetic"
+    }
+  ]
+}

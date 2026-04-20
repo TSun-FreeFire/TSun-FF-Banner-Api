@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from PIL import Image, ImageDraw, ImageFont
 from concurrent.futures import ThreadPoolExecutor
 from fontTools.ttLib import TTFont
@@ -211,6 +211,12 @@ async def home():
                 return HTMLResponse(content=f.read())
     return HTMLResponse(content="<h1>TSun Banner Api</h1><p>Use <code>/profile?uid=YOUR_UID</code></p>")
 
+@app.get("/background-images.json")
+async def background_images():
+    json_path = os.path.join(os.path.dirname(__file__), "background-images.json")
+    if os.path.exists(json_path):
+        return FileResponse(json_path)
+    return {"assets": []}
 
 @app.get("/health")
 async def health():

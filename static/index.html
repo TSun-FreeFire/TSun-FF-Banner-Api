@@ -43,11 +43,13 @@
     .hero p { margin: 16px 0 24px; max-width: 620px; font-size: 22px; font-weight: 700; color: #242424; }
     .btn { appearance: none; border: 3px solid var(--line); background: #dcdcdc; color: var(--ink); padding: 12px 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.4px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; transition: transform .12s ease; }
     .btn:hover { transform: translate(-2px, -2px); box-shadow: 3px 3px 0 var(--line); }
-    .art-box { border: 3px solid var(--line); background: #fff; min-height: 310px; position: relative; overflow: hidden; box-shadow: var(--card-shadow); display: grid; place-items: center; padding: 18px; }
+    .art-box { border: 3px solid var(--line); background: #fff; min-height: 310px; position: relative; overflow: hidden; box-shadow: var(--card-shadow); display: grid; place-items: center; padding: 18px; user-select: none; -webkit-user-drag: none; -webkit-touch-callout: none; }
     .art-box::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 34px; border-bottom: 3px solid var(--line); background: #d9d9d9; }
     .art { margin-top: 20px; width: min(390px, 92%); aspect-ratio: 1.15 / 1; border: 4px solid #111; border-radius: 24px; background: radial-gradient(circle at 65% 38%, #111 0 16%, transparent 17%), radial-gradient(circle at 65% 38%, #fff 0 8%, transparent 9%), linear-gradient(180deg, #fff 0%, #ececec 100%); position: relative; box-shadow: 16px 16px 0 #111; }
-    .art::before { content: ""; position: absolute; inset: 18px; border: 3px solid #111; border-radius: 18px; background: #fff; }
-    .art::after { content: ""; position: absolute; left: 50%; bottom: 14px; width: 58%; height: 10px; transform: translateX(-50%); border: 3px solid #111; border-radius: 999px; background: #fff; }
+    .art::before { content: ""; position: absolute; inset: 18px; border: 3px solid #111; border-radius: 18px; z-index: 3; pointer-events: none; }
+    .art-layer { position: absolute; inset: 20px; border-radius: 15px; background-color: #fff; background-size: cover; background-position: center; opacity: 0; transition: opacity 2.5s ease-in-out; pointer-events: none; z-index: 1; }
+    .art-layer.active { opacity: 1; z-index: 2; }
+    .art::after { content: ""; position: absolute; left: 50%; bottom: 14px; width: 58%; height: 10px; transform: translateX(-50%); border: 3px solid #111; border-radius: 999px; background: #fff; pointer-events: none; z-index: 4; }
     .quick-title { margin: 0 0 14px; font-size: clamp(22px, 3.5vw, 34px); line-height: 1; letter-spacing: -0.5px; }
     .window-card { border: 3px solid var(--line); background: #fff; box-shadow: var(--card-shadow); overflow: hidden; }
     .window-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 3px solid var(--line); background: #d9d9d9; font-weight: 800; font-size: 14px; }
@@ -127,7 +129,7 @@
           <p>I generate Free Fire profile banners in real time — clean PNG output, no API key, fast response.</p>
           <a class="btn" href="#tester">Generate Banner</a>
         </div>
-        <div class="art-box" aria-hidden="true"><div class="art"></div></div>
+        <div class="art-box" aria-hidden="true" oncontextmenu="return false;"><div id="hero-art" class="art"></div></div>
       </div>
     </section>
 
@@ -420,6 +422,55 @@ GET /health</div>
     document.getElementById('year').textContent = String(new Date().getFullYear());
     checkHealth();
     setPanel('idle');
+
+    // Background Image Rotator
+    (async function initHeroArtRotator() {
+      const artEl = document.getElementById('hero-art');
+      if (!artEl) return;
+      let images = [];
+
+      try {
+        const res = await fetch('/background-images.json');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.assets && data.assets.length > 0) {
+            images = data.assets.map(asset => asset.url);
+          }
+        }
+      } catch (err) {
+        // Silently fallback to default list if backend doesn't serve the JSON
+      }
+
+      function getRandomImage() {
+        return images[Math.floor(Math.random() * images.length)];
+      }
+
+      if (!images.length) return;
+
+      // 1. Instantly set a random image on load
+      let currentImg = getRandomImage();
+      artEl.innerHTML = `<div class="art-layer active" style="background-image: url('${currentImg}')"></div><div class="art-layer"></div>`;
+      let layers = artEl.querySelectorAll('.art-layer');
+      let activeIndex = 0;
+
+      // 2. Crossfade Animate every 20 seconds
+      setInterval(() => {
+        let nextImg = currentImg;
+        while (nextImg === currentImg && images.length > 1) {
+           nextImg = getRandomImage();
+        }
+        currentImg = nextImg;
+
+        let nextIndex = activeIndex === 0 ? 1 : 0;
+        layers[nextIndex].style.backgroundImage = `url('${currentImg}')`;
+        
+        // Trigger smooth crossfade
+        layers[nextIndex].classList.add('active');
+        layers[activeIndex].classList.remove('active');
+        
+        activeIndex = nextIndex;
+      }, 15000);
+    })();
   </script>
 </body>
 </html>
