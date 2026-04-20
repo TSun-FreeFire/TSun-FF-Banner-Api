@@ -29,7 +29,7 @@
     }
     a { color: inherit; }
     .frame { max-width: 1260px; margin: 0 auto; background: var(--paper); border-left: 4px solid var(--line); border-right: 4px solid var(--line); min-height: 100vh; }
-    .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 24px; border-bottom: 3px solid var(--line); background: #dcdcdc; }
+    .topbar { position: sticky; top: 0; z-index: 1000; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 24px; border-bottom: 3px solid var(--line); background: #dcdcdc; }
     .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; letter-spacing: 0.5px; }
     .brand-mark { width: 28px; height: 28px; border: 2px solid var(--line); border-radius: 6px; display: grid; place-items: center; background: #fff; font-size: 14px; font-weight: 900; line-height: 1; }
     .nav { display: flex; gap: 18px; flex-wrap: wrap; font-weight: 700; font-size: 15px; }
@@ -37,7 +37,7 @@
     .nav a:hover { text-decoration: underline; }
     .status-chip { border: 2px solid var(--line); background: #fff; padding: 6px 10px; font-size: 12px; font-weight: 800; text-transform: uppercase; white-space: nowrap; }
     .status-chip strong { font-size: 13px; }
-    .section { border-bottom: 3px solid var(--line); padding: 56px 34px; }
+    .section { border-bottom: 3px solid var(--line); padding: 40px 34px; }
     .hero-wrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: 28px; align-items: center; }
     .hero h1 { margin: 0; font-size: clamp(46px, 8vw, 94px); line-height: 0.95; letter-spacing: -1px; }
     .hero p { margin: 16px 0 24px; max-width: 620px; font-size: 22px; font-weight: 700; color: #242424; }
@@ -61,9 +61,9 @@
     .stacked:nth-child(1) { top: 16px; left: 27px; z-index: 27; }
     .stacked:nth-child(2) { top: 107px; left: min(510px, 45%); z-index: 26; }
     .stacked:nth-child(3) { top: -120px; right: 13px; z-index: 25; }
-    #blog { position: relative; overflow: hidden; }
-    #blog .window-card.stacked { cursor: grab; user-select: none; touch-action: none; }
-    #blog .is-dragging { cursor: grabbing; }
+    #info { position: relative; overflow: hidden; }
+    #info .window-card.stacked { cursor: grab; user-select: none; touch-action: none; }
+    #info .is-dragging { cursor: grabbing; }
     .api-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 16px; align-items: start; }
     .panel { border: 3px solid var(--line); background: #fff; box-shadow: var(--card-shadow); padding: 18px; }
     .panel h3 { margin: 0 0 12px; font-size: 22px; line-height: 1; letter-spacing: -0.3px; }
@@ -90,7 +90,7 @@
     tr:last-child td { border-bottom: none; }
     th:last-child, td:last-child { border-right: none; }
     th { background: #d9d9d9; text-transform: uppercase; letter-spacing: .4px; font-size: 12px; }
-    .footer { padding: 24px 34px 34px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 13px; font-weight: 800; }
+    .footer { padding: 17px 34px 17px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 13px; font-weight: 800; }
     @media (max-width: 1060px) {
       .hero-wrap, .api-grid { grid-template-columns: 1fr; }
       .stack-wrap { min-height: 0; display: grid; gap: 16px; }
@@ -113,7 +113,7 @@
         <span>TSun Banner Api</span>
       </div>
       <nav class="nav">
-        <a href="#blog">Blog</a>
+        <a href="#info">info</a>
         <a href="#tester">Generator</a>
         <a href="#endpoints">Endpoints</a>
       </nav>
@@ -131,22 +131,22 @@
       </div>
     </section>
 
-    <section class="section" id="blog">
-      <h2 class="quick-title">From the blog</h2>
+    <section class="section" id="info">
+      <h2 class="quick-title">From authur</h2>
       <p class="muted" style="margin-top:-2px;">View all posts</p>
       <div class="stack-wrap">
         <article class="window-card stacked">
-          <div class="window-head"><span class="dots">◌◌</span><span>info</span></div>
+          <div class="window-head"><span class="dots">◌◌</span><span>info.pdf</span></div>
           <div class="thumb" style="height:60px;"></div>
           <div class="card-body"><h3>Why No API Key?</h3><p>Keeping the endpoint open helps fast testing and integration for hobby projects and tooling.</p></div>
         </article>
         <article class="window-card stacked">
-          <div class="window-head"><span class="dots">◌◌</span><span>info</span></div>
+          <div class="window-head"><span class="dots">◌◌</span><span>info.pdf</span></div>
           <div class="thumb" style="height:60px;background:linear-gradient(135deg,#bcbcbc 0%,#dfdfdf 50%,#a0a0a0 100%);"></div>
           <div class="card-body"><h3>Rendering Pipeline</h3><p>How avatar, banner, font shaping, and stroke text are merged in one PNG response.</p></div>
         </article>
         <article class="window-card stacked">
-          <div class="window-head"><span class="dots">◌◌</span><span>2026-04-05-blog.pdf</span></div>
+          <div class="window-head"><span class="dots">◌◌</span><span>info.pdf</span></div>
           <div class="thumb" style="height:60px;background:linear-gradient(135deg,#c8c8c8 0%,#f2f2f2 54%,#b7b7b7 100%);"></div>
           <div class="card-body"><h3>Unicode Support</h3><p>The service supports mixed scripts and filters unsupported glyphs to avoid broken boxes.</p></div>
         </article>
@@ -322,11 +322,11 @@ GET /health</div>
       });
     }
 
-    function initBlogDrag() {
-      const blogSection = document.getElementById('blog');
-      if (!blogSection) return;
+    function initinfoDrag() {
+      const infoSection = document.getElementById('info');
+      if (!infoSection) return;
 
-      const draggableItems = blogSection.querySelectorAll('.window-card.stacked');
+      const draggableItems = infoSection.querySelectorAll('.window-card.stacked');
       let activeDrag = null;
       let zCounter = 20;
 
@@ -371,7 +371,7 @@ GET /health</div>
           if (event.button !== undefined && event.button !== 0) return;
           event.preventDefault();
 
-          const bounds = blogSection.getBoundingClientRect();
+          const bounds = infoSection.getBoundingClientRect();
           const rect = target.getBoundingClientRect();
           const current = getTranslate(target);
 
@@ -416,7 +416,7 @@ GET /health</div>
         toggleOverride();
       }
     });
-    initBlogDrag();
+    initinfoDrag();
     document.getElementById('year').textContent = String(new Date().getFullYear());
     checkHealth();
     setPanel('idle');
