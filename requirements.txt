@@ -7,3 +7,4 @@ starlette
 anyio
 aiofiles
 fonttools
+gunicorn

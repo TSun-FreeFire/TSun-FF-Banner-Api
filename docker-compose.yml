@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  tsun-ff-banner-api:
+    build: .
+    container_name: tsun-ff-banner-api
+    restart: always
+    ports:
+      - "127.0.0.1:8074:8074"
+    environment:
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8074/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
