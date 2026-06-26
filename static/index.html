@@ -58,6 +58,13 @@
     .card-body { padding: 18px; }
     .card-body h3 { margin: 0 0 10px; font-size: clamp(20px, 2.8vw, 32px); line-height: 1; letter-spacing: -0.4px; }
     .card-body p { margin: 0 0 16px; color: var(--muted); line-height: 1.45; font-weight: 600; font-size: 14px; }
+    .mini-row { position: absolute; bottom: 0; right: 13px; display: flex; gap: 16px; z-index: 24; }
+    .mini-card { width: 150px; aspect-ratio: 1 / 1; display: flex; flex-direction: column; }
+    .mini-card .window-head { font-size: 12px; padding: 6px 10px; }
+    .mini-card .dots { font-size: 16px; }
+    .mini-body { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 14px; }
+    .mini-body strong { font-size: 18px; letter-spacing: -0.3px; }
+    .mini-body span { color: var(--muted); font-weight: 700; font-size: 13px; margin-top: 4px; }
     .stack-wrap { margin-top: 140px; position: relative; min-height: 380px; }
     .stacked { position: absolute; width: min(440px, 90%); }
     .stacked:nth-child(1) { top: 16px; left: 27px; z-index: 27; }
@@ -97,6 +104,7 @@
       .hero-wrap, .api-grid { grid-template-columns: 1fr; }
       .stack-wrap { min-height: 0; display: grid; gap: 16px; }
       .stacked { position: static; width: 100%; }
+      .mini-row { position: static; flex-wrap: wrap; }
     }
     @media (max-width: 720px) {
       .frame { border-left-width: 2px; border-right-width: 2px; }
@@ -152,6 +160,16 @@
           <div class="thumb" style="height:60px;background:linear-gradient(135deg,#c8c8c8 0%,#f2f2f2 54%,#b7b7b7 100%);"></div>
           <div class="card-body"><h3>Unicode Support</h3><p>The service supports mixed scripts and filters unsupported glyphs to avoid broken boxes.</p></div>
         </article>
+        <div class="mini-row">
+          <article class="window-card mini-card">
+            <div class="window-head"><span class="dots">◌◌</span><span>Version.pdf</span></div>
+            <div class="mini-body"><strong>Version</strong><span>5.4.1</span></div>
+          </article>
+          <article class="window-card mini-card">
+            <div class="window-head"><span class="dots">◌◌</span><span>Obinfo.pdf</span></div>
+            <div class="mini-body"><strong>OB Update</strong><span>FreeFire OB54</span></div>
+          </article>
+        </div>
       </div>
     </section>
 
