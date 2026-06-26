@@ -88,7 +88,7 @@ async def fetch_image_bytes(item_id):
         return None
 
     item_id = str(item_id)
-    url = f"https://raw.githubusercontent.com/3ch0Byt3-1/Icons/refs/heads/main/icons/{item_id}.png"
+    url = f"https://raw.githubusercontent.com/TSun-FreeFire/FF-Avatar-And-Banners/refs/heads/main/icons/{item_id}.png"
 
     try:
         resp = await client.get(url)
