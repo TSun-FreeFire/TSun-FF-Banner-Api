@@ -58,7 +58,7 @@
     .card-body { padding: 18px; }
     .card-body h3 { margin: 0 0 10px; font-size: clamp(20px, 2.8vw, 32px); line-height: 1; letter-spacing: -0.4px; }
     .card-body p { margin: 0 0 16px; color: var(--muted); line-height: 1.45; font-weight: 600; font-size: 14px; }
-    .mini-row { position: absolute; bottom: 0; right: 13px; display: flex; gap: 16px; z-index: 24; }
+    .mini-row { position: absolute; bottom: 0; right: 13px; display: flex; gap: 16px; z-index: 30; }
     .mini-card { width: 150px; aspect-ratio: 1 / 1; display: flex; flex-direction: column; }
     .mini-card .window-head { font-size: 12px; padding: 6px 10px; }
     .mini-card .dots { font-size: 16px; }
@@ -71,7 +71,7 @@
     .stacked:nth-child(2) { top: 107px; left: min(510px, 45%); z-index: 26; }
     .stacked:nth-child(3) { top: -120px; right: 13px; z-index: 25; }
     #info { position: relative; overflow: hidden; }
-    #info .window-card.stacked { cursor: grab; user-select: none; touch-action: none; }
+    #info .window-card.stacked, #info .window-card.mini-card { cursor: grab; user-select: none; touch-action: none; }
     #info .is-dragging { cursor: grabbing; }
     .api-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 16px; align-items: start; }
     .panel { border: 3px solid var(--line); background: #fff; box-shadow: var(--card-shadow); padding: 18px; }
@@ -346,7 +346,7 @@ GET /health</div>
       const infoSection = document.getElementById('info');
       if (!infoSection) return;
 
-      const draggableItems = infoSection.querySelectorAll('.window-card.stacked');
+      const draggableItems = infoSection.querySelectorAll('.window-card.stacked, .window-card.mini-card');
       let activeDrag = null;
       let zCounter = 20;
 
