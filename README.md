@@ -85,7 +85,7 @@ Generates a Free Fire profile banner PNG.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `uid` | `string` | ✅ Yes | Free Fire player UID (numeric) |
+| `uid` | `string` | ✅ Yes | Free Fire player UID |
 | `banner` | `string` | ❌ No | Override banner asset ID — 9 digits, starts with `901` |
 | `avatar` | `string` | ❌ No | Override avatar asset ID — 9 digits, starts with `902` |
 
@@ -93,7 +93,7 @@ Generates a Free Fire profile banner PNG.
 
 ```
 200 OK          → PNG image
-400 Bad Request → Invalid UID or override ID format
+400 Bad Request → Invalid UID length/format or override ID format
 404 Not Found   → Player not found
 502 Bad Gateway → Upstream data error
 500 Error       → Internal rendering error

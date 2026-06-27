@@ -297,8 +297,8 @@ def validate_banner_id(banner_id: str) -> int:
 
 def validate_uid(uid: str) -> str:
     normalized_uid = uid.strip()
-    if not normalized_uid or not normalized_uid.isdigit():
-        raise HTTPException(status_code=400, detail="Invalid UID. Must contain digits only")
+    if not normalized_uid.isdigit() or not 8 <= len(normalized_uid) <= 12:
+        raise HTTPException(status_code=400, detail="Invalid UID. Must be 8 to 12 digits")
     return normalized_uid
 
 @app.get("/profile")
