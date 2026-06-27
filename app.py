@@ -16,6 +16,8 @@ from fontTools.ttLib import TTFont
 
 _START_TIME   = time.time()
 _RENDER_COUNT = 0
+_CACHE_TTL_SECONDS = 60
+_PROFILE_CACHE: dict[str, tuple[float, bytes]] = {}
 client: httpx.AsyncClient = None  # type: ignore[assignment]  # set in lifespan
 process_pool: ThreadPoolExecutor  = None  # type: ignore[assignment]  # set in lifespan
 
@@ -80,7 +82,7 @@ def load_unicode_font(size, font_file=FONT_FILE):
         if os.path.exists(font_path):
             return ImageFont.truetype(font_path, size)
         return ImageFont.load_default()
-    except:
+    except Exception:
         return ImageFont.load_default()
 
 async def fetch_image_bytes(item_id):
@@ -94,9 +96,23 @@ async def fetch_image_bytes(item_id):
         resp = await client.get(url)
         if resp.status_code == 200:
             return resp.content
-    except:
+    except Exception:
         pass
     return None
+
+def get_cached_profile(cache_key: str) -> Optional[bytes]:
+    cached = _PROFILE_CACHE.get(cache_key)
+    if cached is None:
+        return None
+
+    expires_at, content = cached
+    if expires_at <= time.time():
+        _PROFILE_CACHE.pop(cache_key, None)
+        return None
+    return content
+
+def set_cached_profile(cache_key: str, content: bytes) -> None:
+    _PROFILE_CACHE[cache_key] = (time.time() + _CACHE_TTL_SECONDS, content)
 
 def bytes_to_image(img_bytes):
     if img_bytes:
@@ -177,10 +193,14 @@ def process_banner_image(data, avatar_bytes, banner_bytes, pin_bytes):
             if ord(char) > 127 and ord(char) not in _CMAP_ALL:
                 continue
             font = resolve_font(char, font_main, font_cherokee, font_canadian, font_tibetan, font_sans_serif)
-            for dx in range(-size, size + 1):
-                for dy in range(-size, size + 1):
-                    draw.text((current_x + dx, y + dy), char, font=font, fill=stroke_col)
-            draw.text((current_x, y), char, font=font, fill=text_col)
+            draw.text(
+                (current_x, y),
+                char,
+                font=font,
+                fill=text_col,
+                stroke_width=size,
+                stroke_fill=stroke_col,
+            )
             current_x += font.getlength(char)
 
     stroke_col, text_col = "black", "white"
@@ -236,7 +256,7 @@ async def health():
     return JSONResponse({
         "status": "ok",
         "service": "TSun Banner Api",
-        "version": "2.6.0",
+        "version": "2.7.0",
         "uptime": uptime_human,
         "uptime_seconds": uptime_seconds,
         "banners_rendered": _RENDER_COUNT,
@@ -275,10 +295,17 @@ def validate_banner_id(banner_id: str) -> int:
         raise HTTPException(status_code=400, detail="Invalid banner ID. Must be exactly 9 digits and start with 901 (e.g. 901000001)")
     return int(banner_id)
 
+def validate_uid(uid: str) -> str:
+    normalized_uid = uid.strip()
+    if not normalized_uid or not normalized_uid.isdigit():
+        raise HTTPException(status_code=400, detail="Invalid UID. Must contain digits only")
+    return normalized_uid
+
 @app.get("/profile")
 async def get_banner(uid: str, banner: Optional[str] = None, avatar: Optional[str] = None):
-    if not uid:
-        raise HTTPException(status_code=400, detail="UID required")
+    uid = validate_uid(uid)
+    avatar_override = validate_avatar_id(avatar.strip()) if avatar else None
+    banner_override = validate_banner_id(banner.strip()) if banner else None
 
     try:
         resp = await client.get(f"{INFO_API_URL}/{uid}")
@@ -295,12 +322,17 @@ async def get_banner(uid: str, banner: Optional[str] = None, avatar: Optional[st
         
         if not account_info: raise HTTPException(status_code=404, detail="Not Found")
         
-        avatar_id = validate_avatar_id(avatar) if avatar else (equipped_items.get("EquippedAvatarId") or 902000003)
-        banner_id = validate_banner_id(banner) if banner else (equipped_items.get("EquippedBannerId") or 901000001)
+        avatar_id = avatar_override or (equipped_items.get("EquippedAvatarId") or 902000003)
+        banner_id = banner_override or (equipped_items.get("EquippedBannerId") or 901000001)
+        pin_id = profile_info.get("Title")
+        cache_key = f"{uid}:{avatar_id}:{banner_id}:{pin_id or ''}"
+        cached_profile = get_cached_profile(cache_key)
+        if cached_profile is not None:
+            return Response(content=cached_profile, media_type="image/png", headers={"Cache-Control": "public, max-age=300"})
+
         avatar_task = fetch_image_bytes(avatar_id)
         banner_task = fetch_image_bytes(banner_id)
         
-        pin_id = profile_info.get("Title")
         pin_task = fetch_image_bytes(pin_id) if (pin_id and str(pin_id) != "0") else asyncio.sleep(0, result=None)
 
         results = await asyncio.gather(avatar_task, banner_task, pin_task)
@@ -323,11 +355,15 @@ async def get_banner(uid: str, banner: Optional[str] = None, avatar: Optional[st
         
         global _RENDER_COUNT
         _RENDER_COUNT += 1
-        return Response(content=img_io.getvalue(), media_type="image/png", headers={"Cache-Control": "public, max-age=300"})
+        content = img_io.getvalue()
+        set_cached_profile(cache_key, content)
+        return Response(content=content, media_type="image/png", headers={"Cache-Control": "public, max-age=300"})
 
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal render error")
 
 if __name__ == '__main__':
     import uvicorn

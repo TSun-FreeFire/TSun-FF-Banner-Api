@@ -4,7 +4,7 @@
 
 <br/>
 
-[![Deploy](https://img.shields.io/badge/Deployed%20on-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://banner.tsunstudio.pw/)
+[![Deploy](https://img.shields.io/badge/Deployed%20on-VPS-111827?style=for-the-badge&logo=docker&logoColor=white)](https://banner.tsunstudio.pw/)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Latest-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![License](https://img.shields.io/badge/License-MIT-22d3ee?style=for-the-badge)](LICENSE)
@@ -38,7 +38,7 @@ Player UID  ──►  Free Fire Data  ──►  PIL Renderer  ──►  PNG R
 - ⚡ Single GET request — no JSON parsing on your end  
 - 🎨 Renders equipped banner + avatar + name + guild + level  
 - 🔤 Full Unicode support (Cherokee, Tibetan, Canadian Aboriginal, and more)  
-- 🌐 Deployed on Vercel — globally available, zero cold-start penalty  
+- 🌐 Docker-ready deployment with Gunicorn/Uvicorn on port `8074`  
 - 🔓 No API key or authentication required  
 
 ---
@@ -114,7 +114,7 @@ Returns live system status.
 {
   "status": "ok",
   "service": "TSun Banner Api",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "uptime": "1h 23m 45s",
   "uptime_seconds": 5025,
   "banners_rendered": 142,
@@ -139,7 +139,7 @@ Serves the **TSun Banner Api** web frontend — a live interactive banner tester
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
 ![Pillow](https://img.shields.io/badge/Pillow-PIL-ffb86c?style=flat-square)
 ![HTTPX](https://img.shields.io/badge/HTTPX-async-22d3ee?style=flat-square)
-![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
 ![GSAP](https://img.shields.io/badge/GSAP-88CE02?style=flat-square&logo=greensock&logoColor=black)
 
@@ -153,7 +153,7 @@ Serves the **TSun Banner Api** web frontend — a live interactive banner tester
 | HTTP Client | HTTPX (async) |
 | Font Parsing | FontTools |
 | Frontend | Tailwind CSS + GSAP |
-| Deployment | Vercel (Serverless) |
+| Deployment | Docker + Gunicorn/Uvicorn |
 
 ---
 
@@ -182,13 +182,21 @@ API is now live at `http://127.0.0.1:5000`
 curl "http://127.0.0.1:5000/profile?uid=YOUR_UID" --output banner.png
 ```
 
+**Run tests:**
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
 ---
 
-## ✦ Deploy to Vercel
+## ✦ Deploy with Docker
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/TSun-FreeFire/TSun-FF-Banner-Api)
+```bash
+docker compose up -d --build
+```
 
-The repo includes a pre-configured `vercel.json` — just connect the repo and deploy.
+The API listens on `127.0.0.1:8074` by default. Put Nginx, Caddy, or another reverse proxy in front of it for HTTPS and your public domain.
 
 ---
 
@@ -199,7 +207,10 @@ TSun-FF-Banner-Api/
 │
 ├── app.py              # FastAPI application — routes, renderer, lifespan
 ├── requirements.txt    # Python dependencies
-├── vercel.json         # Vercel serverless deployment config
+├── requirements-dev.txt # Test dependencies
+├── Dockerfile          # Container image for the API
+├── docker-compose.yml  # VPS deployment on port 8074
+├── gunicorn.conf.py    # Gunicorn/Uvicorn production server config
 │
 ├── fonts/              # Unicode font files
 │   ├── arial_unicode_bold.otf

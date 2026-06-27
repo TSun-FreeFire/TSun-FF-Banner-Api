@@ -15,3 +15,5 @@ build/
 venv/
 __pycache__/
 .vscode/
+tests/test_app.py
+.kilo/
