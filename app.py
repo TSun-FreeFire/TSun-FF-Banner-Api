@@ -85,19 +85,22 @@ def load_unicode_font(size, font_file=FONT_FILE):
     except Exception:
         return ImageFont.load_default()
 
-async def fetch_image_bytes(item_id):
+async def fetch_image_bytes(item_id, fallback_id=None):
     if not item_id or str(item_id) == "0" or item_id is None:
         return None
 
-    item_id = str(item_id)
-    url = f"https://raw.githubusercontent.com/TSun-FreeFire/TSun-FF-Avatar-And-Banners/refs/heads/main/icons/{item_id}.png"
+    item_ids = [str(item_id)]
+    if fallback_id and str(fallback_id) != str(item_id):
+        item_ids.append(str(fallback_id))
 
-    try:
-        resp = await client.get(url)
-        if resp.status_code == 200:
-            return resp.content
-    except Exception:
-        pass
+    for image_id in item_ids:
+        url = f"https://raw.githubusercontent.com/TSun-FreeFire/TSun-FF-Avatar-And-Banners/refs/heads/main/icons/{image_id}.png"
+        try:
+            resp = await client.get(url)
+            if resp.status_code == 200:
+                return resp.content
+        except Exception:
+            pass
     return None
 
 def get_cached_profile(cache_key: str) -> Optional[bytes]:
@@ -330,8 +333,8 @@ async def get_banner(uid: str, banner: Optional[str] = None, avatar: Optional[st
         if cached_profile is not None:
             return Response(content=cached_profile, media_type="image/png", headers={"Cache-Control": "public, max-age=300"})
 
-        avatar_task = fetch_image_bytes(avatar_id)
-        banner_task = fetch_image_bytes(banner_id)
+        avatar_task = fetch_image_bytes(avatar_id, fallback_id=902000016)
+        banner_task = fetch_image_bytes(banner_id, fallback_id=901000031)
         
         pin_task = fetch_image_bytes(pin_id) if (pin_id and str(pin_id) != "0") else asyncio.sleep(0, result=None)
 
