@@ -216,12 +216,18 @@
       <h2 class="quick-title">API reference</h2>
       <div class="code">GET /profile?uid=123456789
 GET /profile?uid=123456789&banner=901000001&avatar=902000001
+GET /avatar?uid=123456789
+GET /banner?uid=123456789
+GET /account?uid=123456789
 GET /health</div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Output</th></tr></thead>
           <tbody>
             <tr><td>GET</td><td><code>/profile</code></td><td>Generates a Free Fire banner image from UID and optional override IDs.</td><td><code>image/png</code></td></tr>
+            <tr><td>GET</td><td><code>/avatar</code></td><td>Returns the equipped avatar image for a UID.</td><td><code>image/png</code></td></tr>
+            <tr><td>GET</td><td><code>/banner</code></td><td>Returns the equipped banner image for a UID.</td><td><code>image/png</code></td></tr>
+            <tr><td>GET</td><td><code>/account</code></td><td>Returns account name with direct avatar & banner links (JSON).</td><td><code>application/json</code></td></tr>
             <tr><td>GET</td><td><code>/health</code></td><td>Returns service health, uptime, version, and counters.</td><td><code>application/json</code></td></tr>
             <tr><td>GET</td><td><code>/</code></td><td>Serves this retro frontend.</td><td><code>text/html</code></td></tr>
           </tbody>

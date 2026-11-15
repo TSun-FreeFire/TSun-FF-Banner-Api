@@ -21,7 +21,7 @@
 ## ✦ Preview
 
 <div align="center">
-<img src="https://banner.tsunstudio.pw/profile?uid=7741399252" alt="Banner Preview" width="80%" style="border-radius:12px"/>
+<img src="https://banner.tsunstudio.me/profile?uid=7741399252" alt="Banner Preview" width="80%" style="border-radius:12px"/>
 <br/><sub>↑ Live output from <code>GET /profile?uid=7741399252</code></sub>
 </div>
 
@@ -102,6 +102,83 @@ Generates a Free Fire profile banner PNG.
 **Example with overrides:**
 ```
 GET /profile?uid=7741399252&banner=901000011&avatar=902000007
+```
+
+### `GET /avatar`
+
+Returns the equipped avatar image for a UID.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uid` | `string` | ✅ Yes | Free Fire player UID |
+
+**Response:** `image/png` — the equipped avatar (falls back to default avatar if none equipped).
+
+```
+200 OK          → PNG image
+400 Bad Request → Invalid UID length/format
+404 Not Found   → Player not found or avatar not available
+502 Bad Gateway → Upstream data error
+500 Error       → Internal error
+```
+
+Example:
+```
+GET /avatar?uid=7741399252
+```
+
+### `GET /banner`
+
+Returns the equipped banner image for a UID.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uid` | `string` | ✅ Yes | Free Fire player UID |
+
+**Response:** `image/png` — the equipped banner (falls back to default banner if none equipped).
+
+```
+200 OK          → PNG image
+400 Bad Request → Invalid UID length/format
+404 Not Found   → Player not found or banner not available
+502 Bad Gateway → Upstream data error
+500 Error       → Internal error
+```
+
+Example:
+```
+GET /banner?uid=7741399252
+```
+
+### `GET /account`
+
+Returns account name with direct avatar and banner links in JSON.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uid` | `string` | ✅ Yes | Free Fire player UID |
+
+**Response:** `application/json`
+
+```json
+{
+  "name": "puan0510P",
+  "avatar": "https://banner.tsunstudio.me/avatar?uid=7741399252",
+  "banner": "https://banner.tsunstudio.me/banner?uid=7741399252"
+}
+```
+
+```
+200 OK    → JSON object
+400 Bad Request → Invalid UID length/format
+404 Not Found → Player not found
+502 Bad Gateway → Upstream data error
+500 Error → Internal error
+```
+
+Example:
+```
+GET /account?uid=7741399252
 ```
 
 ---
@@ -250,7 +327,10 @@ Every character is checked against each font's cmap before rendering — no miss
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/` | Web frontend (banner tester UI) |
-| `GET` | `/profile?uid=` | Generate banner PNG |
+| `GET` | `/profile?uid=` | Generate combined banner PNG (avatar + banner + info) |
+| `GET` | `/avatar?uid=` | Return equipped avatar image (PNG) |
+| `GET` | `/banner?uid=` | Return equipped banner image (PNG) |
+| `GET` | `/account?uid=` | Return account name with direct avatar & banner links (JSON) |
 | `GET` | `/health` | System status & uptime |
 | `GET` | `/favicon.ico` | Favicon (Free Fire icon) |
 

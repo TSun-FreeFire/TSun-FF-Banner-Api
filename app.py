@@ -368,6 +368,84 @@ async def get_banner(uid: str, banner: Optional[str] = None, avatar: Optional[st
         print(f"Error: {e}")
         raise HTTPException(status_code=500, detail="Internal render error")
 
+
+async def _fetch_account(uid: str) -> dict:
+    resp = await client.get(f"{INFO_API_URL}/{uid}")
+    if resp.status_code != 200:
+        raise HTTPException(status_code=502, detail="Info API Error")
+    data = resp.json()
+    account_info = data.get("AccountInfo") or {}
+    equipped_items = data.get("EquippedItemsInfo") or {}
+    if not account_info:
+        raise HTTPException(status_code=404, detail="Not Found")
+    return {
+        "account_info": account_info,
+        "equipped_items": equipped_items,
+    }
+
+
+@app.get("/avatar")
+async def get_avatar(uid: str):
+    """Return the equipped avatar image for a UID."""
+    uid = validate_uid(uid)
+    profile = await _fetch_account(uid)
+    avatar_id = profile["equipped_items"].get("EquippedAvatarId") or 902000003
+    cache_key = f"avatar:{uid}:{avatar_id}"
+    cached = get_cached_profile(cache_key)
+    if cached is not None:
+        return Response(content=cached, media_type="image/png", headers={"Cache-Control": "public, max-age=300"})
+    try:
+        avatar_bytes = await fetch_image_bytes(avatar_id, fallback_id=902000016)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error: {e}")
+        raise HTTPException(status_code=500, detail="Avatar fetch error")
+    if not avatar_bytes:
+        raise HTTPException(status_code=404, detail="Avatar not found")
+    set_cached_profile(cache_key, avatar_bytes)
+    return Response(content=avatar_bytes, media_type="image/png", headers={"Cache-Control": "public, max-age=300"})
+
+
+@app.get("/banner")
+async def get_banner_image(uid: str):
+    """Return the equipped banner image for a UID."""
+    uid = validate_uid(uid)
+    profile = await _fetch_account(uid)
+    banner_id = profile["equipped_items"].get("EquippedBannerId") or 901000001
+    cache_key = f"banner:{uid}:{banner_id}"
+    cached = get_cached_profile(cache_key)
+    if cached is not None:
+        return Response(content=cached, media_type="image/png", headers={"Cache-Control": "public, max-age=300"})
+    try:
+        banner_bytes = await fetch_image_bytes(banner_id, fallback_id=901000031)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error: {e}")
+        raise HTTPException(status_code=500, detail="Banner fetch error")
+    if not banner_bytes:
+        raise HTTPException(status_code=404, detail="Banner not found")
+    set_cached_profile(cache_key, banner_bytes)
+    return Response(content=banner_bytes, media_type="image/png", headers={"Cache-Control": "public, max-age=300"})
+
+
+@app.get("/account", response_class=JSONResponse)
+async def get_account(uid: str):
+    """Return account name with direct avatar and banner links in JSON."""
+    uid = validate_uid(uid)
+    profile = await _fetch_account(uid)
+    account_info = profile["account_info"]
+    equipped_items = profile["equipped_items"]
+    avatar_id = equipped_items.get("EquippedAvatarId") or 902000003
+    banner_id = equipped_items.get("EquippedBannerId") or 901000001
+    return JSONResponse({
+        "name": account_info.get("AccountName") or "Unknown",
+        "avatar": f"https://banner.tsunstudio.me/avatar?uid={uid}",
+        "banner": f"https://banner.tsunstudio.me/banner?uid={uid}",
+    })
+
+
 if __name__ == '__main__':
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=5000)
