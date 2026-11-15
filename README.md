@@ -21,7 +21,7 @@
 ## ✦ Preview
 
 <div align="center">
-<img src="https://banner.tsunstudio.pw/profile?uid=7741399252" alt="Banner Preview" width="80%" style="border-radius:12px"/>
+<img src="https://banner.tsunstudio.me/profile?uid=7741399252" alt="Banner Preview" width="80%" style="border-radius:12px"/>
 <br/><sub>↑ Live output from <code>GET /profile?uid=7741399252</code></sub>
 </div>
 
